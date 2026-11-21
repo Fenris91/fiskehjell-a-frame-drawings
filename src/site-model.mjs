@@ -90,7 +90,7 @@ export const localAxes = (angleDeg) => {
 };
 
 // Footprint corners. A structure is a rectangle unless it gives `outline` (its own
-// convex corners as [across, along] metres from its centre) or `round: true` (a
+// corners as [across, along] metres from its centre; any simple shape) or `round: true` (a
 // circle whose diameter is its width).
 export const structureCorners = (structure) => {
   const axes = localAxes(structure.angleDeg);

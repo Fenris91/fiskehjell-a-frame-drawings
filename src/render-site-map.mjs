@@ -21,7 +21,7 @@ function escapeText(value) {
 // Footprint corners as [east, north]. A rectangle's corners 0-1 and 2-3 are its
 // two ends. A structure may instead give `outline`, its own corners as
 // [across, along] metres from its centre, or `round: true` for a circle whose
-// diameter is its width. Outlines must bulge outward everywhere (be convex).
+// diameter is its width. An outline may be any simple shape, such as an L.
 function cornersOf(structure) {
   const radians = structure.angleDeg * Math.PI / 180;
   const across = [Math.cos(radians), -Math.sin(radians)];
@@ -55,20 +55,39 @@ function insidePolygon(point, polygon) {
   return inside;
 }
 
-// Two convex footprints at any angle: they overlap unless some edge direction separates them.
+// Two footprints of any shape, at any angle. They overlap if their outlines
+// cross, or if one lies inside the other. Walls that only touch do not count.
 function footprintsOverlap(first, second) {
   const a = cornersOf(first), b = cornersOf(second);
-  for (const corners of [a, b]) {
-    for (let index = 0; index < corners.length; index += 1) {
-      const next = corners[(index + 1) % corners.length];
-      const edge = [next[0] - corners[index][0], next[1] - corners[index][1]];
-      const axis = [-edge[1], edge[0]];
-      const span = (points) => points.map(([e, n]) => e * axis[0] + n * axis[1]);
-      const pa = span(a), pb = span(b);
-      if (Math.max(...pa) <= Math.min(...pb) + 1e-9 || Math.max(...pb) <= Math.min(...pa) + 1e-9) return false;
+  const tiny = 1e-7;
+  const side = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  for (let i = 0; i < a.length; i += 1) {
+    for (let j = 0; j < b.length; j += 1) {
+      const p = a[i], q = a[(i + 1) % a.length], r = b[j], t = b[(j + 1) % b.length];
+      const d1 = side(p, q, r), d2 = side(p, q, t), d3 = side(r, t, p), d4 = side(r, t, q);
+      if (((d1 > tiny && d2 < -tiny) || (d1 < -tiny && d2 > tiny)) && ((d3 > tiny && d4 < -tiny) || (d3 < -tiny && d4 > tiny))) return true;
     }
   }
-  return true;
+  // No crossing: one may still hold the other. A point is inside only if it is
+  // clear of every wall, so shared walls and corners are not an overlap.
+  const strictlyInside = (point, polygon) => {
+    let inside = false;
+    for (let index = 0; index < polygon.length; index += 1) {
+      const p = polygon[index], q = polygon[(index + 1) % polygon.length];
+      const length = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      const along = ((point[0] - p[0]) * (q[0] - p[0]) + (point[1] - p[1]) * (q[1] - p[1])) / (length * length);
+      if (along >= -tiny && along <= 1 + tiny && Math.abs(side(p, q, point)) / length < 1e-6) return false;
+      if ((p[1] > point[1]) !== (q[1] > point[1]) && point[0] < (q[0] - p[0]) * (point[1] - p[1]) / (q[1] - p[1]) + p[0]) inside = !inside;
+    }
+    return inside;
+  };
+  // Test corners and the middle of every wall, so a shape that sits wholly
+  // inside the other, or shares all its corners with it, is still found.
+  const probes = (polygon) => polygon.flatMap((p, index) => { const q = polygon[(index + 1) % polygon.length]; return [p, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]]; });
+  const middle = (polygon) => [polygon.reduce((sum, p) => sum + p[0], 0) / polygon.length, polygon.reduce((sum, p) => sum + p[1], 0) / polygon.length];
+  // The middle of an L can fall in its notch, outside the shape: use it only when it is inside.
+  const own = (polygon) => { const point = middle(polygon); return strictlyInside(point, polygon) ? [point] : []; };
+  return [...probes(a), ...own(a)].some((point) => strictlyInside(point, b)) || [...probes(b), ...own(b)].some((point) => strictlyInside(point, a));
 }
 
 // The drawing of one structure: footprint, ridge for an A-frame, name and size.

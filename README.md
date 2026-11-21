@@ -190,8 +190,8 @@ laid out to show how the pieces are meant to work together:
   shell.
 
 A structure is a rectangle unless it gives `round: true` (a circle whose
-diameter is its width) or `outline` (its own convex corners, in metres from its
-centre). The example site has one of each: the lavvo and the wedge.
+diameter is its width) or `outline` (its own corners, in metres from its centre;
+any simple shape, such as an L). The example site has one of each: the lavvo and the wedge.
 
 The Hall is fixed at local `E=0, N=0`; every other structure, perimeter vertex,
 zone and gate is in metres from that reference, rounded to half a metre.

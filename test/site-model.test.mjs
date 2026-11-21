@@ -161,3 +161,20 @@ test("the page carries the editor and its data, and the exporter asks for the st
   const exporter = await readFile(new URL("../scripts/export.py", import.meta.url), "utf8");
   assert.match(exporter, /site-map\.html"[\s\S]*#static/);
 });
+
+test("overlap is judged on the real shape: an L leaves room in its notch", async () => {
+  const { footprintsOverlap } = await import("../src/render-site-map.mjs");
+  // An L, 10 by 10 with a 6 by 6 notch cut from its north-east corner.
+  const ell = { east: 0, north: 0, angleDeg: 0, width: 10, length: 10, outline: [[-5, -5], [5, -5], [5, -1], [-1, -1], [-1, 5], [-5, 5]] };
+  const box = (east, north, size = 4) => ({ east, north, angleDeg: 0, width: size, length: size });
+  assert.equal(footprintsOverlap(ell, box(2, 2)), false, "a box standing in the notch");
+  assert.equal(footprintsOverlap(ell, box(1, 1, 4)), false, "a box filling the notch wall to wall");
+  assert.equal(footprintsOverlap(ell, box(0, 0)), true, "a box across the inner corner");
+  assert.equal(footprintsOverlap(ell, box(-3, -3, 2)), true, "a box wholly inside the L");
+  assert.equal(footprintsOverlap(box(-3, -3, 2), ell), true, "and the same asked the other way");
+  assert.equal(footprintsOverlap(ell, box(7, 0)), false, "a box touching the L's east wall");
+  assert.equal(footprintsOverlap(ell, box(0, 0, 30)), true, "a box that swallows the L");
+  assert.equal(footprintsOverlap(box(0, 0), box(0, 0)), true, "two boxes in the same place");
+  assert.equal(footprintsOverlap({ ...box(0, 0), angleDeg: 45 }, box(4.9, 0)), false, "a turned box whose corner stops short");
+  assert.equal(footprintsOverlap({ ...box(0, 0), angleDeg: 45 }, box(4.5, 0)), true, "a turned box whose corner pokes in");
+});
