@@ -16,6 +16,20 @@ export const archHall = {
   notes: ["DIMENSIONS PROVISIONAL / MÅL FORELØPIGE", "VERIFY ON SITE / KONTROLLERES PÅ STEDET", "EXAMPLE BUILDING — DRAFT, NOT FOR CONSTRUCTION"]
 };
 
+// A low, wide rib: a segment of a circle that rises less than half its span.
+export const segmentalHall = {
+  ...archHall,
+  id: "segmental-hall",
+  name: "SEGMENTAL HALL",
+  drawingTitle: "SEGMENTAL HALL - PLAN AND ELEVATIONS / PLAN OG FASADER",
+  drawingNumber: "B3300-T",
+  form: { kind: "arch", arch: "segmental", lengthMm: 15000, widthMm: 12000, riseMm: 3500, frames: 6, segments: 12 },
+  openings: [
+    { id: "D1", kind: "door", wall: "start", center: 0.5, widthMm: 2400, heightMm: 2400 },
+    { id: "D2", kind: "door", wall: "end", center: 0.5, widthMm: 1000, heightMm: 2100 }
+  ]
+};
+
 // The same hall with a pointed rib, to show the other arch kinds share the form.
 export const pointedHall = {
   ...archHall,

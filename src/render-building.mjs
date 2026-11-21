@@ -56,7 +56,7 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
 
   // One scale for the plan and both elevations, so they line up as on a drawing board.
   const planBox = { x: 120, y: 150, w: 500, h: 290 };
-  const sideBox = { y: 505, h: 255 };
+  const sideBox = { y: 525, h: 235 };
   const frontBox = { x: 640, w: 300 };
   const scale = Math.min(planBox.w / (L + 2 * over), planBox.h / (W + 2 * over), sideBox.h / H, frontBox.w / (W + 2 * over));
   const planLeft = planBox.x + (planBox.w - L * scale) / 2;

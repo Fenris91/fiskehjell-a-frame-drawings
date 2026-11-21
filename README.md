@@ -38,15 +38,17 @@ openings schedule and key figures.
 | `cabin` | Box, gable roof | Walls with thickness, doors with swings, windows, roof overhang, knee braces |
 | `shed` | Box, mono-pitch roof | A lean-to roof, a wire cross and a strut: sloped members with their angles |
 | `wedge` | Diagonal footprint | A plan that is not a rectangle, with a door on the angled wall |
+| `rack` | A-frame | The fiskehjell section itself, drawn by this sheet straight from the geometry |
 | `arch-hall` | Arch, semicircle | A curved rib extruded along the building |
-| `pointed-hall` | Arch, pointed | The same form with a pointed rib; `segmental` is the third kind |
+| `segmental-hall` | Arch, segmental | A low, wide rib that rises less than half its span |
+| `pointed-hall` | Arch, pointed | A rib of two arcs meeting at a point |
 | `lavvo` | Round, cone | A round footprint with an open top |
 | `dome` | Round, dome | A round footprint under part of a sphere |
 
 A specification has a `form`, `openings`, optional `braces` and a foundation pad
 size:
 
-- `form.kind` is `box` (with `roof.kind` `flat`, `monopitch` or `gable`), `arch`
+- `form.kind` is `aframe`, `box` (with `roof.kind` `flat`, `monopitch` or `gable`), `arch`
   (`semicircle`, `segmental` or `pointed`), `footprint` (corners listed
   anticlockwise, with a wall height) or `round` (`cone` or `dome`).
 - An opening names its wall and its centre as a ratio along that wall, seen from
@@ -94,8 +96,8 @@ building and one sheet per other building to `dist/`, and the machine-readable d
   coordinated drawing, then a checkpoint page with dimensions, labels and
   foundation coordinates;
 - `output/pdf/a-frame-buildings.pdf`, the combined set: the four A-frame
-  drawings, the site map, the specification register, four checkpoint pages,
-  then each other building with its audited sheet;
+  drawings, the site map, the register of every building, four checkpoint
+  pages, then each other building with its audited sheet;
 - `output/pdf/a-frame-buildings-no-overview.pdf`, the same set without the site
   map.
 
@@ -204,7 +206,8 @@ the model and the map follows; a structure outside the perimeter is refused.
 Opened in a browser, `dist/site-map.html` is also a layout editor. Drag a
 structure or a perimeter corner (positions snap to half a metre), rotate the
 selected structure with the buttons or the `[` and `]` keys, nudge it with the
-arrow keys, and add or remove containers and service units. A structure that
+arrow keys, and add or remove structures: containers, service units, round
+ones and ones with an angled corner. A structure that
 overlaps another or leaves the perimeter is outlined in red and named in the
 status line. **Copy layout** gives the `structures` and `perimeter` text to
 paste into `src/site-model.mjs`; nothing is saved until you do. Zones, gates,

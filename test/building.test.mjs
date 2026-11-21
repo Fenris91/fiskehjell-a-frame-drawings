@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildingModel } from "../src/building.mjs";
-import { buildings, cabin, dome, lavvo, shed, wedge } from "../src/buildings/index.mjs";
+import { buildings, cabin, dome, lavvo, rack, segmentalHall, shed, wedge } from "../src/buildings/index.mjs";
 import { convexHull, prismSolid, profiles, radiusAt, revolvedSolid } from "../src/geometry.mjs";
 import { renderBuildingSheet } from "../src/render-building.mjs";
 
@@ -10,7 +10,7 @@ const clean = (html) => html.replace(/[ \t]+$/gm, "");
 const failed = (model) => model.checks.filter((item) => !item.ok).map((item) => item.text);
 
 test("every example building passes its own audit and matches its saved drawing", async () => {
-  assert.equal(buildings.length, 7);
+  assert.equal(buildings.length, 9);
   for (const building of buildings) {
     const model = buildingModel(building);
     assert.deepEqual(failed(model), [], building.id);
@@ -62,6 +62,22 @@ test("arch sections: semicircle, segmental and pointed", () => {
   assert.deepEqual([pointed.vertices.P0, pointed.vertices.P12], [[0, 0], [8000, 0]]);
   assert.throws(() => profiles.arch({ widthMm: 8000, riseMm: 5000, kind: "segmental" }), /cannot rise more than half/);
   assert.throws(() => profiles.arch({ widthMm: 8000, riseMm: 3000, kind: "pointed" }), /at least half/);
+});
+
+test("the A-frame section and the segmental arch are drawn by the same sheet", () => {
+  const frame = buildingModel(rack);
+  assert.deepEqual(failed(frame), []);
+  assert.equal(frame.solid.profile.kind, "aframe");
+  // A door fits under the apex of the gable but not out by a foot, where the frame is low.
+  const tall = { id: "D9", kind: "door", wall: "start", widthMm: 1800, heightMm: 2200 };
+  assert.deepEqual(failed(buildingModel({ ...rack, openings: [{ ...tall, center: 0.5 }] })), []);
+  assert.match(failed(buildingModel({ ...rack, openings: [{ ...tall, center: 0.2 }] })).join("|"), /D9: head/);
+  // An A-frame has no upright side walls to put an opening in.
+  assert.match(failed(buildingModel({ ...rack, openings: [{ ...tall, wall: "near", center: 0.5 }] })).join("|"), /D9: head/);
+  const low = buildingModel(segmentalHall);
+  assert.deepEqual(failed(low), []);
+  assert.equal(Math.round(low.facts.radiusMm), Math.round((6000 ** 2 + 3500 ** 2) / 7000));
+  assert.match(renderBuildingSheet(segmentalHall), /Rise \/ Pilhøyde/);
 });
 
 test("a diagonal footprint: angled walls have true lengths and bearings", () => {

@@ -136,6 +136,8 @@ function startEditor() {
     <button type="button" data-action="rotate" data-by="15" title="Rotate the selected structure (key: ])">⟳ 15°</button>
     <button type="button" data-action="add" data-category="mobile">+ Container</button>
     <button type="button" data-action="add" data-category="service">+ Service unit</button>
+    <button type="button" data-action="add" data-category="permanent" data-shape="round">+ Round</button>
+    <button type="button" data-action="add" data-category="permanent" data-shape="outline">+ Angled</button>
     <button type="button" data-action="remove">Remove</button>
     <button type="button" data-action="reset">Reset</button>
     <button type="button" data-action="copy">Copy layout</button>
@@ -243,10 +245,14 @@ function startEditor() {
     if (action === "rotate") rotate(Number(button.dataset.by));
     if (action === "add") {
       added += 1;
-      const mobile = button.dataset.category === "mobile";
-      const structure = { id: `${mobile ? "container" : "service-unit"}-new-${added}`, name: `${mobile ? "Container" : "Service unit"} ${added}`,
+      const mobile = button.dataset.category === "mobile", shape = button.dataset.shape;
+      const kind = shape === "round" ? ["round", "Round"] : shape === "outline" ? ["angled", "Angled"] : mobile ? ["container", "Container"] : ["service-unit", "Service unit"];
+      const structure = { id: `${kind[0]}-new-${added}`, name: `${kind[1]} ${added}`,
         category: button.dataset.category, east: snap((view.e0 + view.e1) / 2), north: snap((view.n0 + view.n1) / 2),
-        width: mobile ? 2.5 : 6, length: mobile ? 6 : 4, height: 3, angleDeg: 0, dimensionStatus: "approximate" };
+        width: shape ? 6 : mobile ? 2.5 : 6, length: shape === "outline" ? 9 : shape ? 6 : mobile ? 6 : 4, height: 3, angleDeg: 0, dimensionStatus: "approximate" };
+      if (shape === "round") structure.round = true;
+      // One corner cut off at an angle, as [across, along] metres from the centre.
+      if (shape === "outline") structure.outline = [[-3, -4.5], [3, -4.5], [3, 4.5], [0, 4.5], [-3, 1.5]];
       structures.push(structure); selected = structure.id; render();
     }
     if (action === "remove" && selected && selected !== data.origin) {

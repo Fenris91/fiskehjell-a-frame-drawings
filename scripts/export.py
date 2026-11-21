@@ -33,7 +33,8 @@ SITE_MAP_PNG = PNG_DIR / "site-top-down-map.png"
 BUILDINGS = ("hall", "shell6", "shell6d", "shell8")
 # Buildings drawn by the generic sheet (src/render-building.mjs). Page 2 of each
 # is the same sheet with its technical audit layer switched on.
-FORMS = ("cabin", "shed", "wedge", "arch-hall", "pointed-hall", "lavvo", "dome")
+FORMS = ("cabin", "shed", "wedge", "rack", "arch-hall", "segmental-hall", "pointed-hall", "lavvo", "dome")
+FORM_SUMMARY = ROOT / "output" / "data" / "buildings.json"
 FORM_LABELS = (
     "PLAN / PLANTEGNING",
     "3D SKETCH / 3D-SKISSE",
@@ -431,11 +432,25 @@ def export_specification_register_page():
     for line in ["B1...B8 - closed-shell concrete anchor centres", "L1/L2 - Hall extension anchor lines", "Black dot - structural joint; grey block - concrete anchor", "Optional emergency-door layer - omitted from this review issue", "Steel wire - solid near wall / dashed far wall", "Door sets: E=end gable, S=exterior long side, I=internal opposing pair"]:
         pdf.drawString(right_x, y, line); y -= 21
     register_y = panel_top - 225; pdf.setFont("Helvetica-Bold", 11); pdf.drawString(margin, register_y, "PACKAGE ORDER / DOKUMENTREKKEFOLGE"); pdf.setFont("Helvetica", 8.5); y = register_y - 24
-    for line in ["1-4 Full-page building drawings: Hall, Shell 6, Shell 6D, Shell 8", "5 Site top-down placement map", "6 This dimensions and labels register", "7-10 Per-building coordinates and top-down construction layer states"]:
+    for line in ["1-4 Full-page building drawings: Hall, Shell 6, Shell 6D, Shell 8", "5 Site top-down placement map", "6 This dimensions and labels register", "7-10 Per-building coordinates and top-down construction layer states", "11 onward: each other building form, then the same sheet with its technical audit layer"]:
         pdf.drawString(margin + 12, y, line); y -= 21
+    # The other building forms, from the summary the build writes.
+    forms = json.loads(FORM_SUMMARY.read_text(encoding="utf-8")) if FORM_SUMMARY.exists() else []
+    if forms:
+        form_top = y - 26
+        pdf.setFont("Helvetica-Bold", 11); pdf.drawString(margin, form_top, "OTHER BUILDING FORMS / ANDRE BYGGFORMER")
+        columns = [("BUILDING", 0), ("FORM", 130), ("X LENGTH", 230), ("Y WIDTH", 310), ("Z HEIGHT", 390), ("FLOOR AREA", 470), ("AUDIT CHECKS", 560)]
+        pdf.setFont("Helvetica-Bold", 7)
+        for title, offset in columns: pdf.drawString(margin + 12 + offset, form_top - 20, title)
+        pdf.line(margin, form_top - 25, page_width - margin, form_top - 25)
+        pdf.setFont("Helvetica", 8.5)
+        for index, form in enumerate(forms):
+            row_y = form_top - 40 - index * 15
+            cells = [form["name"], form["form"], mm_text(form["lengthMm"]), mm_text(form["widthMm"]), mm_text(form["heightMm"]), f'{form["areaM2"]:.1f} m2', f'{form["checks"]} pass']
+            for (title, offset), cell in zip(columns, cells): pdf.drawString(margin + 12 + offset, row_y, str(cell))
     pdf.setFont("Helvetica-Bold", 9); pdf.drawString(margin, 86, "STATUS / STATUS"); pdf.setFont("Helvetica", 8.5)
-    draw_wrapped(pdf, "All dimensions and labels remain provisional until checked against recovered controlled drawings or verified on site. Future photo inserts may document corners, doors, anchors and wall interfaces.", margin + 68, 86, page_width - margin * 2 - 68, size=8.5, leading=12)
-    pdf.setFont("Helvetica", 8); pdf.drawString(margin, 48, "SOURCE OF TRUTH: data-driven building specifications and generated foundation schedules."); pdf.drawRightString(page_width - margin, 48, "A-frame A-FRAME DRAWING PACKAGE - SPECIFICATION REGISTER")
+    draw_wrapped(pdf, "All dimensions and labels are examples and remain provisional until verified on site.", margin + 100, 86, page_width - margin * 2 - 100, size=8.5, leading=12)
+    pdf.setFont("Helvetica", 8); pdf.drawString(margin, 48, "SOURCE OF TRUTH: data-driven building specifications and generated foundation schedules."); pdf.drawRightString(page_width - margin, 48, "A-FRAME DRAWING PACKAGE - SPECIFICATION REGISTER")
     pdf.showPage(); pdf.save()
     return verify_single_page(output)
 

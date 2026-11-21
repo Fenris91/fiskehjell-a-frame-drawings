@@ -19,6 +19,10 @@ function formSolid(form) {
     const profile = profiles.arch({ widthMm: form.widthMm, riseMm: form.riseMm, kind: form.arch ?? "semicircle", segments: form.segments ?? 12 });
     return extrusionSolid(profile, [stationRun("", form.frames ?? 2)], { lengthMm: form.lengthMm });
   }
+  if (form.kind === "aframe") {
+    const profile = profiles.aframe({ widthMm: form.widthMm, heightMm: form.heightMm });
+    return extrusionSolid(profile, [stationRun("", form.frames ?? 2)], { lengthMm: form.lengthMm });
+  }
   if (form.kind === "footprint") return prismSolid({ footprint: form.corners, wallHeightMm: form.wallHeightMm });
   if (form.kind === "round") {
     const steps = form.shape === "dome" ? 6 : 1;
@@ -53,7 +57,8 @@ function wallTop(solid, wall, ratio) {
   }
   // A gable end: read the height off the section's upper outline.
   const y = wall.id === "start" ? profile.widthMm * (1 - ratio) : profile.widthMm * ratio;
-  const upper = profile.elevation.outline.map((name) => profile.vertices[name]).filter(([, z], index, all) => z > 0 || index === 0 || index === all.length - 1);
+  // Every corner of the section, left to right: its upper outline.
+  const upper = Object.values(profile.vertices).slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const points = profile.kind === "box"
     ? [profile.vertices.E, ...(profile.ridge ? [profile.vertices.C] : []), profile.vertices.D]
     : upper;
