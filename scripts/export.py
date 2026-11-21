@@ -236,7 +236,7 @@ def export_site_map_png(chrome):
     if not html_path.exists():
         raise FileNotFoundError(f"Run npm run build first: {html_path} is missing")
     SITE_MAP_PNG.unlink(missing_ok=True)
-    run_browser(chrome, ["--hide-scrollbars", "--force-device-scale-factor=2", "--window-size=1400,1260", f"--screenshot={SITE_MAP_PNG}", html_path.as_uri()], "chrome-site-map-png")
+    run_browser(chrome, ["--hide-scrollbars", "--force-device-scale-factor=2", "--window-size=1400,1260", f"--screenshot={SITE_MAP_PNG}", html_path.as_uri() + "#static"], "chrome-site-map-png")
     wait_for_file(SITE_MAP_PNG)
     with Image.open(SITE_MAP_PNG) as image:
         if image.size != (2800, 2520):

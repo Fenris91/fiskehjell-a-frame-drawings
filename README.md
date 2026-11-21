@@ -123,6 +123,16 @@ derived footprint corners, extents and perimeter length) and draws
 `dist/site-map.html` from it with `src/render-site-map.mjs`. Move a structure in
 the model and the map follows; a structure outside the perimeter is refused.
 
+Opened in a browser, `dist/site-map.html` is also a layout editor. Drag a
+structure or a perimeter corner (positions snap to half a metre), rotate the
+selected structure with the buttons or the `[` and `]` keys, nudge it with the
+arrow keys, and add or remove containers and service units. A structure that
+overlaps another or leaves the perimeter is outlined in red and named in the
+status line. **Copy layout** gives the `structures` and `perimeter` text to
+paste into `src/site-model.mjs`; nothing is saved until you do. Zones, gates,
+road and water are not editable in the page. The exporter opens
+`site-map.html#static`, which is the drawing without the editor.
+
 See [docs/site-coordinate-system.md](docs/site-coordinate-system.md) for the
 coordinate contract, validation rules and known limits.
 
