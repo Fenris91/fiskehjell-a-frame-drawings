@@ -1,0 +1,14 @@
+{
+  "name": "fiskehjell-a-frame-drawings",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "export": "python scripts/export.py",
+    "site-model": "node scripts/export-site-model.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "description": "Data-driven drawing sheets for fiskehjell-style A-frame buildings",
+  "license": "MIT",
+  "private": true
+}
