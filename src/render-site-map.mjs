@@ -18,14 +18,20 @@ function escapeText(value) {
   return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
-// Footprint corners as [east, north]. Corners 0-1 and 2-3 are the two ends.
+// Footprint corners as [east, north]. A rectangle's corners 0-1 and 2-3 are its
+// two ends. A structure may instead give `outline`, its own corners as
+// [across, along] metres from its centre, or `round: true` for a circle whose
+// diameter is its width. Outlines must bulge outward everywhere (be convex).
 function cornersOf(structure) {
   const radians = structure.angleDeg * Math.PI / 180;
   const across = [Math.cos(radians), -Math.sin(radians)];
   const along = [Math.sin(radians), Math.cos(radians)];
-  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([w, l]) => [
-    structure.east + across[0] * w * structure.width / 2 + along[0] * l * structure.length / 2,
-    structure.north + across[1] * w * structure.width / 2 + along[1] * l * structure.length / 2
+  const local = structure.round
+    ? Array.from({ length: 24 }, (_, index) => [Math.cos(index / 24 * 2 * Math.PI) * structure.width / 2, Math.sin(index / 24 * 2 * Math.PI) * structure.width / 2])
+    : structure.outline ?? [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([w, l]) => [w * structure.width / 2, l * structure.length / 2]);
+  return local.map(([w, l]) => [
+    structure.east + across[0] * w + along[0] * l,
+    structure.north + across[1] * w + along[1] * l
   ]);
 }
 
@@ -49,12 +55,13 @@ function insidePolygon(point, polygon) {
   return inside;
 }
 
-// Two footprints at any angle: they overlap unless some edge direction separates them.
+// Two convex footprints at any angle: they overlap unless some edge direction separates them.
 function footprintsOverlap(first, second) {
   const a = cornersOf(first), b = cornersOf(second);
   for (const corners of [a, b]) {
-    for (let index = 0; index < 2; index += 1) {
-      const edge = [corners[index + 1][0] - corners[index][0], corners[index + 1][1] - corners[index][1]];
+    for (let index = 0; index < corners.length; index += 1) {
+      const next = corners[(index + 1) % corners.length];
+      const edge = [next[0] - corners[index][0], next[1] - corners[index][1]];
       const axis = [-edge[1], edge[0]];
       const span = (points) => points.map(([e, n]) => e * axis[0] + n * axis[1]);
       const pa = span(a), pb = span(b);
@@ -78,7 +85,7 @@ function structureMarkup(structure, view) {
   let turn = Math.round(Math.atan2(direction[1], direction[0]) * 1800 / Math.PI) / 10;
   if (turn > 90) turn -= 180;
   if (turn < -90) turn += 180;
-  const rotate = turn === 0 ? "" : ` transform="rotate(${turn} ${cx} ${cy})"`;
+  const rotate = turn === 0 || structure.round ? "" : ` transform="rotate(${turn} ${cx} ${cy})"`;
   const room = Math.max(structure.width, structure.length) * view.scale;
   const narrow = Math.min(structure.width, structure.length) * view.scale;
   const lines = narrow < 70
@@ -93,7 +100,7 @@ function structureMarkup(structure, view) {
     return `<text class="structure-${index === 0 ? "name" : "size"}" x="${cx}" y="${y}" text-anchor="middle"${rotate}${style}>${escapeText(line)}</text>`;
   });
   let ridge = "";
-  if (structure.category === "aframe") {
+  if (structure.category === "aframe" && !structure.outline && !structure.round) {
     const start = toScreen(view, (corners[0][0] + corners[1][0]) / 2, (corners[0][1] + corners[1][1]) / 2);
     const end = toScreen(view, (corners[2][0] + corners[3][0]) / 2, (corners[2][1] + corners[3][1]) / 2);
     ridge = `<line class="ridge" x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}"/>`;

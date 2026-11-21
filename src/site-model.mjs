@@ -34,6 +34,10 @@ export const siteModel = {
     { id: "dock-store", name: "Dock store", role: "Waterfront equipment", category: "permanent", east: 50, north: 28, width: 3.5, length: 9, height: 3.5, angleDeg: 0, dimensionStatus: "approximate" },
     { id: "ticket-booth", name: "Tickets · WC", role: "At the public entrance", category: "service", east: 40, north: 28, width: 10, length: 5, height: 3, angleDeg: 0, dimensionStatus: "approximate" },
     { id: "backstage", name: "Backstage · 2 floors", role: "Crew, offices and stores behind the Hall", category: "service", east: -16, north: -4, width: 8, length: 26.5, height: 6, angleDeg: 0, dimensionStatus: "approximate" },
+    // The two footprints that are not rectangles: a round lavvo in the yard, and the
+    // wedge by the road with its angled wall. Both are drawn as building sheets too.
+    { id: "lavvo", name: "Lavvo", role: "Fire and gathering in the yard", category: "permanent", round: true, east: 13, north: -1, width: 8, length: 8, height: 6, angleDeg: 0, dimensionStatus: "provisional" },
+    { id: "wedge", name: "Wedge", role: "Workshop by the road", category: "permanent", outline: [[-3, -5.5], [3, -5.5], [3, 5.5], [0, 5.5], [-3, 2.5]], east: -8, north: 24, width: 6, length: 11, height: 3, angleDeg: 90, dimensionStatus: "provisional" },
     { id: "container", name: "Container", role: "Deliveries by the technical gate", category: "mobile", east: -15, north: -27, width: 4, length: 11.5, height: 3, angleDeg: 90, dimensionStatus: "approximate" }
   ],
   perimeter: [
@@ -85,14 +89,20 @@ export const localAxes = (angleDeg) => {
   };
 };
 
+// Footprint corners. A structure is a rectangle unless it gives `outline` (its own
+// convex corners as [across, along] metres from its centre) or `round: true` (a
+// circle whose diameter is its width).
 export const structureCorners = (structure) => {
   const axes = localAxes(structure.angleDeg);
-  return [
-    [-structure.width / 2, -structure.length / 2],
-    [structure.width / 2, -structure.length / 2],
-    [structure.width / 2, structure.length / 2],
-    [-structure.width / 2, structure.length / 2]
-  ].map(([across, along]) => ({
+  const local = structure.round
+    ? Array.from({ length: 24 }, (_, index) => [Math.cos(index / 24 * 2 * Math.PI) * structure.width / 2, Math.sin(index / 24 * 2 * Math.PI) * structure.width / 2])
+    : structure.outline ?? [
+        [-structure.width / 2, -structure.length / 2],
+        [structure.width / 2, -structure.length / 2],
+        [structure.width / 2, structure.length / 2],
+        [-structure.width / 2, structure.length / 2]
+      ];
+  return local.map(([across, along]) => ({
     east: structure.east + axes.width[0] * across + axes.length[0] * along,
     north: structure.north + axes.width[1] * across + axes.length[1] * along
   }));

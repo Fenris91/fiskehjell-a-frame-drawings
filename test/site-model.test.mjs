@@ -48,29 +48,41 @@ test("all default structure footprint corners are inside the perimeter", () => {
 
 test("the example site keeps its stated size and encloses every structure", () => {
   const metrics = siteMetrics();
-  assert.equal(metrics.structureCount, 12);
-  assert.equal(metrics.enclosedStructureCount, 12);
+  assert.equal(metrics.structureCount, 14);
+  assert.equal(metrics.enclosedStructureCount, 14);
   assert.equal(metrics.eastWestSpan, 90);
   assert.equal(metrics.northSouthSpan, 70);
   assert.ok(Math.abs(metrics.borderLength - 311.8) < 0.1);
 });
 
-test("no two example structures overlap", () => {
-  // Every example footprint is axis-aligned (0 or 90 degrees), so boxes are exact.
-  const boxes = siteModel.structures.map((structure) => {
-    assert.ok([0, 90].includes(structure.angleDeg), `${structure.id} must stay axis-aligned`);
-    const corners = structureCorners(structure);
-    const east = corners.map((corner) => corner.east);
-    const north = corners.map((corner) => corner.north);
-    return { id: structure.id, e0: Math.min(...east), e1: Math.max(...east), n0: Math.min(...north), n1: Math.max(...north) };
-  });
-  for (let i = 0; i < boxes.length; i += 1) {
-    for (let j = i + 1; j < boxes.length; j += 1) {
-      const a = boxes[i], b = boxes[j];
-      const apart = a.e1 <= b.e0 || b.e1 <= a.e0 || a.n1 <= b.n0 || b.n1 <= a.n0;
-      assert.ok(apart, `${a.id} overlaps ${b.id}`);
+test("no two example structures overlap, whatever their shape", async () => {
+  const { footprintsOverlap } = await import("../src/render-site-map.mjs");
+  const list = siteModel.structures;
+  for (let i = 0; i < list.length; i += 1) {
+    for (let j = i + 1; j < list.length; j += 1) {
+      assert.equal(footprintsOverlap(list[i], list[j]), false, `${list[i].id} overlaps ${list[j].id}`);
     }
   }
+  // The check is real: the lavvo moved onto the Hall is caught, and so is the wedge's slanted corner.
+  const lavvo = list.find(({ id }) => id === "lavvo"), hall = list.find(({ id }) => id === "hall");
+  assert.equal(footprintsOverlap({ ...lavvo, east: 5 }, hall), true);
+  assert.equal(footprintsOverlap({ ...lavvo, east: 10.1, north: 0 }, hall), false, "a circle clears a wall it does not reach");
+});
+
+test("round and outlined structures have the footprint they describe", async () => {
+  const lavvo = siteModel.structures.find(({ id }) => id === "lavvo");
+  for (const corner of structureCorners(lavvo)) {
+    assert.ok(Math.abs(Math.hypot(corner.east - lavvo.east, corner.north - lavvo.north) - 4) < 1e-9);
+  }
+  const wedge = siteModel.structures.find(({ id }) => id === "wedge");
+  const corners = structureCorners(wedge);
+  assert.equal(corners.length, 5);
+  // Turned 90 degrees, its 11 m length runs east-west and its slanted corner is cut off.
+  const east = corners.map((corner) => corner.east), north = corners.map((corner) => corner.north);
+  assert.ok(Math.abs(Math.max(...east) - Math.min(...east) - 11) < 1e-9);
+  assert.ok(Math.abs(Math.max(...north) - Math.min(...north) - 6) < 1e-9);
+  const { cornersOf } = await import("../src/render-site-map.mjs");
+  assert.deepEqual(cornersOf(wedge).map(([e, n]) => [Number(e.toFixed(6)), Number(n.toFixed(6))]), corners.map((c) => [Number(c.east.toFixed(6)), Number(c.north.toFixed(6))]));
 });
 
 test("site model retains outdoor, dock and circulation layers", () => {
