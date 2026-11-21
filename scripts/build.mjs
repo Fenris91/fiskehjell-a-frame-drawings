@@ -9,6 +9,9 @@ import { renderAFrameSheet } from "../src/render-sheet.mjs";
 import { renderCheckpointSheet } from "../src/render-checkpoint.mjs";
 import { foundationSchedule } from "../src/foundation-schedule.mjs";
 import { renderSiteMap } from "../src/render-site-map.mjs";
+import { renderBuildingSheet } from "../src/render-building.mjs";
+import { buildings } from "../src/buildings/index.mjs";
+import { buildingModel } from "../src/building.mjs";
 import {
   serializableSiteModel,
   siteModel,
@@ -102,5 +105,19 @@ await writeFile(
   "utf8"
 );
 console.log("Built output/data/site-model.json");
+// Every other building form: one sheet each, with its audit layer inside it.
+const buildingList = [];
+for (const building of buildings) {
+  const model = buildingModel(building);
+  const failed = model.checks.filter((item) => !item.ok);
+  if (failed.length > 0) {
+    throw new Error(`${building.id} fails its audit:\n- ${failed.map((item) => item.text).join("\n- ")}`);
+  }
+  await writeFile(resolve(outDir, `${building.id}.html`), cleanHtml(renderBuildingSheet(building)), "utf8");
+  buildingList.push({ id: building.id, name: building.name, form: building.form.kind, checks: model.checks.length, ...model.facts });
+  console.log(`Built dist/${building.id}.html (${model.checks.length} audit checks pass)`);
+}
+await writeFile(resolve(dataDir, "buildings.json"), `${JSON.stringify(buildingList, null, 2)}\n`, "utf8");
+console.log("Built output/data/buildings.json");
 await writeFile(resolve(outDir, "site-map.html"), cleanHtml(renderSiteMap(siteModel)), "utf8");
 console.log("Built dist/site-map.html");

@@ -13,6 +13,10 @@ drawing, and nothing may be built from it without independent verification.
 | --- | --- | --- |
 | ![Hall drawing sheet](docs/samples/hall.png) | ![Shell 8 drawing sheet](docs/samples/shell8.png) | ![Example site map](docs/samples/site-map.png) |
 
+| Cabin | Wedge, audit mode on | Dome |
+| --- | --- | --- |
+| ![Cabin drawing sheet](docs/samples/cabin.png) | ![Wedge drawing sheet with the audit layer](docs/samples/wedge-audit.png) | ![Dome drawing sheet](docs/samples/dome.png) |
+
 ## Example buildings
 
 | Id | Name | What it shows |
@@ -21,6 +25,51 @@ drawing, and nothing may be built from it without independent verification.
 | `shell6` | Shell 6 | Six-frame closed shell, four corner anchors, one full-span wire cross on each long wall |
 | `shell6d` | Shell 6D | The six-frame shell with two opposed internal doors and one gable-end exit |
 | `shell8` | Shell 8 | Eight-frame closed shell, six anchors, one full-height wire cross on each long wall |
+
+## Other building forms
+
+The same geometry draws buildings that are not A-frames. Each is one
+specification in `src/buildings/`, drawn by `src/render-building.mjs` as a plan,
+a side elevation and an end elevation at one shared scale, a 3D sketch, an
+openings schedule and key figures.
+
+| Id | Form | What it shows |
+| --- | --- | --- |
+| `cabin` | Box, gable roof | Walls with thickness, doors with swings, windows, roof overhang, knee braces |
+| `shed` | Box, mono-pitch roof | A lean-to roof, a wire cross and a strut: sloped members with their angles |
+| `wedge` | Diagonal footprint | A plan that is not a rectangle, with a door on the angled wall |
+| `arch-hall` | Arch, semicircle | A curved rib extruded along the building |
+| `pointed-hall` | Arch, pointed | The same form with a pointed rib; `segmental` is the third kind |
+| `lavvo` | Round, cone | A round footprint with an open top |
+| `dome` | Round, dome | A round footprint under part of a sphere |
+
+A specification has a `form`, `openings`, optional `braces` and a foundation pad
+size:
+
+- `form.kind` is `box` (with `roof.kind` `flat`, `monopitch` or `gable`), `arch`
+  (`semicircle`, `segmental` or `pointed`), `footprint` (corners listed
+  anticlockwise, with a wall height) or `round` (`cone` or `dome`).
+- An opening names its wall and its centre as a ratio along that wall, seen from
+  outside. Walls are `near`, `far`, `start` and `end` on a box or arch, a number
+  on a footprint, and a `bearingDeg` on a round building.
+- A brace runs between two points on a wall, or in one frame with `station`.
+
+### Technical drawing audit mode
+
+Every sheet carries an audit layer that is off by default. Tick **Technical
+drawing audit mode** above the sheet in a browser, or open `cabin.html#audit`.
+It adds, in one colour over the same drawing: the coordinate of every frame,
+the label and position of every foundation pad, each opening's distance from
+the start of its wall, wall lengths and bearings on a diagonal footprint, and a
+list of checks with a tick or a cross. The checks cover openings that run past
+a wall, stand taller than it or overlap each other, braces that leave their
+wall, bays that do not add up, and the roof pitch or arch radius.
+
+`npm run build` refuses a building that fails a check. The exporter writes the
+plain sheet as page 1 and the audited sheet as page 2 of each building's PDF.
+
+To add a building, copy the nearest example in `src/buildings/`, add it to
+`src/buildings/index.mjs` and to `FORMS` in `scripts/export.py`, and add a test.
 
 ## Generate and verify
 
@@ -34,8 +83,8 @@ npm run build
 python scripts/export.py
 ```
 
-`npm run build` writes one drawing sheet and one checkpoint sheet per building
-to `dist/`, and the machine-readable data to `output/data/`. Open
+`npm run build` writes one drawing sheet and one checkpoint sheet per A-frame
+building and one sheet per other building to `dist/`, and the machine-readable data to `output/data/`. Open
 `dist/hall.html` in a browser, or print it to an A3 PDF.
 
 `python scripts/export.py` writes:
@@ -44,8 +93,9 @@ to `dist/`, and the machine-readable data to `output/data/`. Open
 - one two-page A3 PDF per building to `output/pdf/<building>.pdf`: the
   coordinated drawing, then a checkpoint page with dimensions, labels and
   foundation coordinates;
-- `output/pdf/a-frame-buildings.pdf`, the combined set: four drawings, the site
-  map, the specification register and four checkpoint pages;
+- `output/pdf/a-frame-buildings.pdf`, the combined set: the four A-frame
+  drawings, the site map, the specification register, four checkpoint pages,
+  then each other building with its audited sheet;
 - `output/pdf/a-frame-buildings-no-overview.pdf`, the same set without the site
   map.
 
@@ -96,9 +146,11 @@ along its length through numbered **stations**:
 - `obliqueView(...)` and `projectSolid(...)` give the 3D sketch; `elevation(...)`
   fits the section into the end view.
 
-The 3D sketch and the end view are drawn from this. The plan and side views
-still work from the dimensions and stations directly. A new building shape
-starts as a new entry in `profiles`.
+It also holds box and arch sections, `prismSolid` for a footprint that is not a
+rectangle and `revolvedSolid` for a round one. The other building forms are
+drawn entirely from these. On the A-frame sheets the 3D sketch and the end view
+are drawn from the core; their plan and side views still work from the
+dimensions and stations directly.
 
 ## Specification ownership
 

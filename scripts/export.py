@@ -31,6 +31,16 @@ TMP_PDF = ROOT / "tmp" / "pdfs"
 DRAWING_SUMMARY = ROOT / "output" / "data" / "drawing-summary.json"
 SITE_MAP_PNG = PNG_DIR / "site-top-down-map.png"
 BUILDINGS = ("hall", "shell6", "shell6d", "shell8")
+# Buildings drawn by the generic sheet (src/render-building.mjs). Page 2 of each
+# is the same sheet with its technical audit layer switched on.
+FORMS = ("cabin", "shed", "wedge", "arch-hall", "pointed-hall", "lavvo", "dome")
+FORM_LABELS = (
+    "PLAN / PLANTEGNING",
+    "3D SKETCH / 3D-SKISSE",
+    "SIDE ELEVATION / LANGFASADE",
+    "END ELEVATION / GAVLFASADE",
+    "TECHNICAL DRAWING AUDIT / KONTROLL",
+)
 SHEET_WIDTH = 1000
 SHEET_HEIGHT = 1410
 PNG_SCALE = 3
@@ -62,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--building",
         action="append",
-        choices=BUILDINGS,
+        choices=BUILDINGS + FORMS,
         help="Export only this building; repeat to select more than one.",
     )
     parser.add_argument(
@@ -146,9 +156,11 @@ class Firefox:
         encoded = self._call(session, "GET", f"/element/{next(iter(element.values()))}/screenshot")
         output.write_bytes(base64.b64decode(encoded))
 
-    def pdf(self, html_path: Path, output: Path) -> None:
+    def pdf(self, html_path: Path, output: Path, fragment: str = "") -> None:
         session = self._session(PNG_SCALE)
-        self._call(session, "POST", "/url", {"url": html_path.as_uri()})
+        # A fragment alone does not reload a page that is already open, so leave it first.
+        self._call(session, "POST", "/url", {"url": "about:blank"})
+        self._call(session, "POST", "/url", {"url": html_path.as_uri() + fragment})
         # A3 portrait with the sheets' own 5 mm margin, in centimetres.
         encoded = self._call(session, "POST", "/print", {
             "page": {"width": 29.7, "height": 42.0},
@@ -217,6 +229,15 @@ def verify_labels(html_path: Path) -> None:
         raise RuntimeError(f"{html_path.name} must show the near concrete rail in side view")
 
 
+def verify_form_sheet(html_path: Path) -> None:
+    source = html_path.read_text(encoding="utf-8")
+    missing = [label for label in FORM_LABELS if label not in source]
+    if missing:
+        raise RuntimeError(f"{html_path.name} is missing labels: {', '.join(missing)}")
+    if 'data-failed="0"' not in source:
+        raise RuntimeError(f"{html_path.name} has failing audit checks")
+
+
 def verify_checkpoint_labels(html_path: Path) -> None:
     source = html_path.read_text(encoding="utf-8")
     missing = [label for label in REQUIRED_CHECKPOINT_LABELS if label not in source]
@@ -228,11 +249,11 @@ def verify_checkpoint_labels(html_path: Path) -> None:
         raise RuntimeError(f"{html_path.name} must show emergency doors in the finished-floor state")
 
 
-def export_png(chrome: Path, building: str, html_path: Path) -> Path:
+def export_png(chrome: Path, building: str, html_path: Path, fragment: str = "") -> Path:
     output = PNG_DIR / f"{building}.png"
     output.unlink(missing_ok=True)
     if isinstance(chrome, Firefox):
-        chrome.screenshot(html_path, output, PNG_SCALE)
+        chrome.screenshot(html_path, output, PNG_SCALE, fragment)
     else:
         run_browser(
             chrome,
@@ -241,7 +262,7 @@ def export_png(chrome: Path, building: str, html_path: Path) -> Path:
                 f"--force-device-scale-factor={PNG_SCALE}",
                 f"--window-size={SHEET_WIDTH},{SHEET_HEIGHT}",
                 f"--screenshot={output}",
-                html_path.as_uri(),
+                html_path.as_uri() + fragment,
             ],
             f"chrome-{building}-png",
         )
@@ -255,11 +276,11 @@ def export_png(chrome: Path, building: str, html_path: Path) -> Path:
     return output
 
 
-def export_pdf_page(chrome: Path, page_name: str, html_path: Path) -> Path:
+def export_pdf_page(chrome: Path, page_name: str, html_path: Path, fragment: str = "") -> Path:
     output = TMP_PDF / f"{page_name}.pdf"
     output.unlink(missing_ok=True)
     if isinstance(chrome, Firefox):
-        chrome.pdf(html_path, output)
+        chrome.pdf(html_path, output, fragment)
     else:
         run_browser(
             chrome,
@@ -267,7 +288,7 @@ def export_pdf_page(chrome: Path, page_name: str, html_path: Path) -> Path:
                 "--no-pdf-header-footer",
                 "--print-to-pdf-no-header",
                 f"--print-to-pdf={output}",
-                html_path.as_uri(),
+                html_path.as_uri() + fragment,
             ],
             f"chrome-{page_name}-pdf",
         )
@@ -424,6 +445,7 @@ def merge_pdf_pages(
     site_map_page: Path,
     specification_page: Path,
     checkpoint_pages: list[Path],
+    form_pages: list[Path],
 ) -> Path:
     output = PDF_DIR / "a-frame-buildings.pdf"
     ordered_pages = [
@@ -431,6 +453,7 @@ def merge_pdf_pages(
         site_map_page,
         specification_page,
         *checkpoint_pages,
+        *form_pages,
     ]
     writer = PdfWriter()
     for page_path in ordered_pages:
@@ -500,7 +523,7 @@ def export_building_pdf(building: str, main_page: Path, checkpoint_page: Path) -
 
 def main() -> None:
     args = parse_args()
-    selected = tuple(dict.fromkeys(args.building or BUILDINGS))
+    selected = tuple(dict.fromkeys(args.building or BUILDINGS + FORMS))
     PNG_DIR.mkdir(parents=True, exist_ok=True)
     PDF_DIR.mkdir(parents=True, exist_ok=True)
     TMP_PDF.mkdir(parents=True, exist_ok=True)
@@ -530,16 +553,28 @@ def export_all(args, selected, chrome) -> None:
         return
 
     pdf_pages: list[Path] = []
+    form_pages: list[Path] = []
     checkpoint_pages: list[Path] = []
     for building in selected:
         html_path = DIST / f"{building}.html"
         checkpoint_path = DIST / f"{building}-checkpoint.html"
         if not html_path.exists():
             raise FileNotFoundError(f"Run npm run build first: {html_path} is missing")
-        if not checkpoint_path.exists():
-            raise FileNotFoundError(f"Run npm run build first: {checkpoint_path} is missing")
-        verify_labels(html_path)
-        verify_checkpoint_labels(checkpoint_path)
+        if building in BUILDINGS:
+            if not checkpoint_path.exists():
+                raise FileNotFoundError(f"Run npm run build first: {checkpoint_path} is missing")
+            verify_labels(html_path)
+            verify_checkpoint_labels(checkpoint_path)
+        if building in FORMS:
+            verify_form_sheet(html_path)
+            png = export_png(chrome, building, html_path, "#static")
+            main_page = export_pdf_page(chrome, f"{building}-main", html_path, "#static")
+            audit_page = export_pdf_page(chrome, f"{building}-audit", html_path, "#audit")
+            form_pages.extend([main_page, audit_page])
+            building_pdf = export_building_pdf(building, main_page, audit_page)
+            print(f"Exported {png.relative_to(ROOT)}")
+            print(f"Exported {building_pdf.relative_to(ROOT)} (2 pages)")
+            continue
         png = export_png(chrome, building, html_path)
         main_page = export_pdf_page(chrome, f"{building}-main", html_path)
         checkpoint_page = export_pdf_page(chrome, f"{building}-checkpoint", checkpoint_path)
@@ -548,7 +583,7 @@ def export_all(args, selected, chrome) -> None:
         building_pdf = export_building_pdf(building, main_page, checkpoint_page)
         print(f"Exported {png.relative_to(ROOT)}")
         print(f"Exported {building_pdf.relative_to(ROOT)} (2 pages)")
-    if selected == BUILDINGS:
+    if selected == BUILDINGS + FORMS:
         site_map_png = export_site_map_png(chrome)
         site_map_page = export_site_map_page(site_map_png)
         specification_page = export_specification_register_page()
@@ -557,6 +592,7 @@ def export_all(args, selected, chrome) -> None:
             site_map_page,
             specification_page,
             checkpoint_pages,
+            form_pages,
         )
         no_overview = merge_pdf_pages_without_overview(
             pdf_pages,

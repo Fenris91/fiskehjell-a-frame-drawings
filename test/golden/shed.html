@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plan SHED</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #d9dde0; font-family: Arial, Helvetica, sans-serif; }
+    .sheet { display: block; width: min(100%, 1000px); height: auto; margin: 0 auto; background: #ffffff; }
+    text { fill: #111111; font-size: 10px; font-weight: 400; }
+    .sheet-border, .title-block rect, .title-block line { fill: none; stroke: #111111; stroke-width: 1; }
+    .view-title, .sheet-title { font-size: 15px; font-weight: 500; }
+    .small, .title-small, .provenance, .cell, .head, .tag, .bubble-text { font-size: 8px; }
+    .title-main { font-size: 11px; font-weight: 500; }
+    .room-name { font-size: 11px; font-weight: 700; }
+    .head { font-weight: 700; fill: #5d646a; }
+    .strong { font-weight: 700; }
+    .tag { fill: #1f4f8f; font-weight: 700; }
+    .dimension, .dimension line { fill: none; stroke: #111111; stroke-width: 0.8; }
+    .dimension-text { font-size: 9px; stroke: none; }
+    .rule { stroke: #111111; stroke-width: 0.6; }
+    .wall-poche { fill: #b9c0c6; stroke: #111111; stroke-width: 1.4; }
+    .floor { fill: #ffffff; stroke: #111111; stroke-width: 0.8; }
+    .pad { fill: #e5e7e9; stroke: #111111; stroke-width: 0.7; stroke-dasharray: 3 2; }
+    .grid-line { stroke: #7a8088; stroke-width: 0.6; stroke-dasharray: 12 3 2 3; }
+    .bubble { fill: #ffffff; stroke: #111111; stroke-width: 0.8; }
+    .bubble-text { font-weight: 700; }
+    .roof-edge { fill: none; stroke: #111111; stroke-width: 0.8; stroke-dasharray: 6 4; }
+    .ridge-line { stroke: #111111; stroke-width: 0.8; stroke-dasharray: 14 4 2 4; }
+    .opening-gap { fill: #ffffff; stroke: none; }
+    .jamb { stroke: #111111; stroke-width: 1.2; }
+    .door-leaf { stroke: #1f4f8f; stroke-width: 1.6; }
+    .door-swing { fill: none; stroke: #1f4f8f; stroke-width: 0.7; stroke-dasharray: 3 2; }
+    .glazing { stroke: #1f4f8f; stroke-width: 0.9; }
+    .brace-plan { stroke: #7a8088; stroke-width: 2.4; }
+    .silhouette { fill: #eef1f3; stroke: #111111; stroke-width: 2.2; stroke-linejoin: round; }
+    .roof { fill: #dfe3e6; stroke: #111111; stroke-width: 1.4; }
+    .roof-line { stroke: #9aa1a8; stroke-width: 0.5; }
+    .roof-edge-heavy { fill: none; stroke: #111111; stroke-width: 4; stroke-linecap: square; stroke-linejoin: miter; }
+    .cladding { stroke: #c3c9ce; stroke-width: 0.5; }
+    .edge { fill: none; stroke: #111111; stroke-width: 0.9; }
+    .edge-sill, .edge-rail { stroke-width: 1.6; }
+    .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
+    .opening { fill: #ffffff; stroke: #1f4f8f; stroke-width: 1.3; }
+    .sketch-opening { fill: #dbe7f5; }
+    .opening-bar { stroke: #1f4f8f; stroke-width: 0.8; }
+    .opening-bar.light { stroke-dasharray: 3 2; }
+    .handle { fill: #1f4f8f; }
+    .sill { stroke: #1f4f8f; stroke-width: 1.6; }
+    .brace { stroke: #6b7279; stroke-width: 2.6; stroke-linecap: round; }
+    .ground { stroke: #111111; stroke-width: 1.8; }
+    .ground-hatch { stroke: #111111; stroke-width: 0.5; }
+    .level path { fill: #111111; }
+    .level-line { stroke: #111111; stroke-width: 0.6; }
+    .title-block { fill: none; stroke: #111111; }
+    /* Audit mode: the same drawing with every position and check shown. */
+    .audit-layer { display: none; }
+    .sheet.audit .audit-layer { display: inline; }
+    .audit-text { fill: #a8127d; font-size: 7.5px; }
+    .audit-title { fill: #a8127d; font-size: 11px; font-weight: 700; }
+    .audit-text.failed, .audit-title.failed { fill: #c02626; font-weight: 700; }
+    .audit-line { stroke: #a8127d; stroke-width: 0.6; }
+    .audit-line.heavy { stroke-width: 1.8; }
+    .mode { max-width: 1000px; margin: 0 auto; padding: 8px 14px; font-size: 14px; background: #ffffff; border-bottom: 1px solid #dfe3e6; }
+    @media print {
+      @page { size: A3 portrait; margin: 5mm; }
+      body { background: #ffffff; }
+      .sheet { width: 100%; }
+      .mode { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sheet" viewBox="0 0 1000 1410" role="img" aria-labelledby="sheet-title sheet-desc" data-form="box" data-checks="11" data-failed="0">
+    <title id="sheet-title">SHED - PLAN AND ELEVATIONS / PLAN OG FASADER</title>
+    <desc id="sheet-desc">Plan, side elevation, end elevation and three-dimensional sketch drawn from one building specification, with schedules and a technical audit layer.</desc>
+    <rect class="sheet-border" x="20" y="18" width="960" height="1380" />
+    <text x="500" y="42" class="sheet-title" text-anchor="middle">PLAN SHED</text>
+
+  <g id="plan-view" aria-label="Plan">
+    <text x="60" y="84" class="view-title">PLAN / PLANTEGNING</text>
+    <polygon class="roof-edge" points="142.1,440 597.9,440 597.9,150 142.1,150" />
+    <rect class="pad" data-pad="1A" x="145.6" y="402" width="34.5" height="34.5" /><rect class="pad" data-pad="1B" x="145.6" y="153.5" width="34.5" height="34.5" /><rect class="pad" data-pad="2A" x="283.7" y="402" width="34.5" height="34.5" /><rect class="pad" data-pad="2B" x="283.7" y="153.5" width="34.5" height="34.5" /><rect class="pad" data-pad="3A" x="421.8" y="402" width="34.5" height="34.5" /><rect class="pad" data-pad="3B" x="421.8" y="153.5" width="34.5" height="34.5" /><rect class="pad" data-pad="4A" x="559.9" y="402" width="34.5" height="34.5" /><rect class="pad" data-pad="4B" x="559.9" y="153.5" width="34.5" height="34.5" />
+    <path class="wall-poche" fill-rule="evenodd" d="M 162.9 419.3 L 577.1 419.3 L 577.1 170.7 L 162.9 170.7 Z M 173.2 408.9 L 566.8 408.9 L 566.8 181.1 L 173.2 181.1 Z" />
+    <polygon class="floor" points="173.2,408.9 566.8,408.9 566.8,181.1 173.2,181.1" />
+
+    <line class="grid-line" x1="162.9" y1="136.7" x2="162.9" y2="433.3" /><circle class="bubble" cx="162.9" cy="126.7" r="9" /><text x="162.9" y="130.2" class="bubble-text" text-anchor="middle">1</text><line class="grid-line" x1="301" y1="136.7" x2="301" y2="433.3" /><circle class="bubble" cx="301" cy="126.7" r="9" /><text x="301" y="130.2" class="bubble-text" text-anchor="middle">2</text><line class="grid-line" x1="439" y1="136.7" x2="439" y2="433.3" /><circle class="bubble" cx="439" cy="126.7" r="9" /><text x="439" y="130.2" class="bubble-text" text-anchor="middle">3</text><line class="grid-line" x1="577.1" y1="136.7" x2="577.1" y2="433.3" /><circle class="bubble" cx="577.1" cy="126.7" r="9" /><text x="577.1" y="130.2" class="bubble-text" text-anchor="middle">4</text><line class="grid-line" x1="128.9" y1="419.3" x2="591.1" y2="419.3" /><circle class="bubble" cx="118.9" cy="419.3" r="9" /><text x="118.9" y="422.8" class="bubble-text" text-anchor="middle">A</text><line class="grid-line" x1="128.9" y1="170.7" x2="591.1" y2="170.7" /><circle class="bubble" cx="118.9" cy="170.7" r="9" /><text x="118.9" y="174.2" class="bubble-text" text-anchor="middle">B</text>
+    <g data-opening="D1"><polygon class="opening-gap" points="314.8,419.3 425.2,419.3 425.2,408.9 314.8,408.9" /><line class="jamb" x1="314.8" y1="419.3" x2="314.8" y2="408.9" /><line class="jamb" x1="425.2" y1="419.3" x2="425.2" y2="408.9" /><polyline class="door-swing" points="425.2,408.9 423.1,387.4 416.8,366.7 406.6,347.6 392.9,330.8 376.1,317.1 357,306.9 336.3,300.6 314.8,298.5" /><line class="door-leaf" x1="314.8" y1="408.9" x2="314.8" y2="298.5" /><text x="370" y="286.3" class="tag" text-anchor="middle">D1</text></g><g data-opening="W1"><polygon class="opening-gap" points="577.1,326.1 577.1,263.9 566.8,263.9 566.8,326.1" /><line class="jamb" x1="577.1" y1="326.1" x2="566.8" y2="326.1" /><line class="jamb" x1="577.1" y1="263.9" x2="566.8" y2="263.9" /><line class="glazing" x1="573.5" y1="326.1" x2="573.5" y2="263.9" /><line class="glazing" x1="570.4" y1="326.1" x2="570.4" y2="263.9" /><text x="544.7" y="298" class="tag" text-anchor="middle">W1</text></g>
+    <line class="brace-plan" x1="439" y1="419.3" x2="577.1" y2="419.3" /><line class="brace-plan" x1="577.1" y1="419.3" x2="439" y2="419.3" /><line class="brace-plan" x1="577.1" y1="170.7" x2="439" y2="170.7" />
+    <text x="370" y="293" class="room-name" text-anchor="middle">SHED</text>
+    <text x="370" y="307" class="small" text-anchor="middle">21.6 m²</text>
+    <g class="dimension"><line x1="162.9" y1="152.7" x2="301" y2="152.7" /><line x1="162.9" y1="146.7" x2="162.9" y2="158.7" /><line x1="301" y1="146.7" x2="301" y2="158.7" /><text x="231.9" y="147.7" class="dimension-text" text-anchor="middle">2 000</text></g><g class="dimension"><line x1="301" y1="152.7" x2="439" y2="152.7" /><line x1="301" y1="146.7" x2="301" y2="158.7" /><line x1="439" y1="146.7" x2="439" y2="158.7" /><text x="370" y="147.7" class="dimension-text" text-anchor="middle">2 000</text></g><g class="dimension"><line x1="439" y1="152.7" x2="577.1" y2="152.7" /><line x1="439" y1="146.7" x2="439" y2="158.7" /><line x1="577.1" y1="146.7" x2="577.1" y2="158.7" /><text x="508.1" y="147.7" class="dimension-text" text-anchor="middle">2 000</text></g>
+    <g class="dimension"><line x1="162.9" y1="453.3" x2="577.1" y2="453.3" /><line x1="162.9" y1="447.3" x2="162.9" y2="459.3" /><line x1="577.1" y1="447.3" x2="577.1" y2="459.3" /><text x="370" y="448.3" class="dimension-text" text-anchor="middle">6 000 mm</text></g>
+    <g class="dimension"><line x1="94.9" y1="170.7" x2="94.9" y2="419.3" /><line x1="88.9" y1="170.7" x2="100.9" y2="170.7" /><line x1="88.9" y1="419.3" x2="100.9" y2="419.3" /><text x="88.9" y="295" class="dimension-text" text-anchor="middle" transform="rotate(-90 88.9 295)">3 600 mm</text></g>
+  </g>
+
+  <g id="sketch-view" aria-label="Three-dimensional sketch">
+    <text x="690" y="84" class="view-title">3D SKETCH / 3D-SKISSE</text>
+    <line class="edge edge-frame" x1="690" y1="320.4" x2="731.7" y2="353.8" /><line class="edge edge-frame" x1="690" y1="320.4" x2="690" y2="235.6" /><line class="edge edge-frame" x1="731.7" y1="353.8" x2="731.7" y2="234.2" /><line class="edge edge-frame" x1="690" y1="235.6" x2="731.7" y2="234.2" /><line class="edge edge-frame" x1="759.4" y1="291.1" x2="801.1" y2="324.5" /><line class="edge edge-frame" x1="759.4" y1="291.1" x2="759.4" y2="206.3" /><line class="edge edge-frame" x1="801.1" y1="324.5" x2="801.1" y2="204.9" /><line class="edge edge-frame" x1="759.4" y1="206.3" x2="801.1" y2="204.9" /><line class="edge edge-rail" x1="690" y1="320.4" x2="759.4" y2="291.1" /><line class="edge edge-rail" x1="731.7" y1="353.8" x2="801.1" y2="324.5" /><line class="edge edge-rail" x1="731.7" y1="234.2" x2="801.1" y2="204.9" /><line class="edge edge-rail" x1="690" y1="235.6" x2="759.4" y2="206.3" /><line class="edge edge-frame" x1="828.9" y1="261.8" x2="870.6" y2="295.1" /><line class="edge edge-frame" x1="828.9" y1="261.8" x2="828.9" y2="176.9" /><line class="edge edge-frame" x1="870.6" y1="295.1" x2="870.6" y2="175.5" /><line class="edge edge-frame" x1="828.9" y1="176.9" x2="870.6" y2="175.5" /><line class="edge edge-rail" x1="759.4" y1="291.1" x2="828.9" y2="261.8" /><line class="edge edge-rail" x1="801.1" y1="324.5" x2="870.6" y2="295.1" /><line class="edge edge-rail" x1="801.1" y1="204.9" x2="870.6" y2="175.5" /><line class="edge edge-rail" x1="759.4" y1="206.3" x2="828.9" y2="176.9" /><line class="edge edge-frame" x1="898.3" y1="232.5" x2="940" y2="265.8" /><line class="edge edge-frame" x1="898.3" y1="232.5" x2="898.3" y2="147.6" /><line class="edge edge-frame" x1="940" y1="265.8" x2="940" y2="146.2" /><line class="edge edge-frame" x1="898.3" y1="147.6" x2="940" y2="146.2" /><line class="edge edge-rail" x1="828.9" y1="261.8" x2="898.3" y2="232.5" /><line class="edge edge-rail" x1="870.6" y1="295.1" x2="940" y2="265.8" /><line class="edge edge-rail" x1="870.6" y1="175.5" x2="940" y2="146.2" /><line class="edge edge-rail" x1="828.9" y1="176.9" x2="898.3" y2="147.6" />
+    <polygon class="opening sketch-opening" data-opening="D1" points="766.4,288.2 821.9,264.7 821.9,187.6 766.4,211" /><polygon class="opening sketch-opening" data-opening="W1" points="914,202.5 924.4,210.9 924.4,176.2 914,167.8" />
+    <line class="brace" x1="828.9" y1="261.8" x2="898.3" y2="147.6" /><line class="brace" x1="898.3" y1="232.5" x2="828.9" y2="176.9" /><line class="brace" x1="940" y1="265.8" x2="870.6" y2="175.5" /><line class="brace" x1="731.7" y1="265" x2="723.3" y2="235.2" />
+  </g>
+
+  <g id="side-view" aria-label="Side elevation">
+    <text x="60" y="516" class="view-title">SIDE ELEVATION / LANGFASADE</text>
+    <polygon class="silhouette" points="162.9,546 577.1,546 577.1,760 162.9,760" />
+    <line class="cladding" x1="162.9" y1="732.4" x2="577.1" y2="732.4" /><line class="cladding" x1="162.9" y1="704.8" x2="577.1" y2="704.8" /><line class="cladding" x1="162.9" y1="677.1" x2="577.1" y2="677.1" /><line class="cladding" x1="162.9" y1="649.5" x2="577.1" y2="649.5" /><line class="cladding" x1="162.9" y1="621.9" x2="577.1" y2="621.9" />
+    <polygon class="roof" points="142.1,608.1 597.9,608.1 597.9,546 142.1,546" /><line class="roof-line" x1="142.1" y1="587.4" x2="597.9" y2="587.4" /><line class="roof-line" x1="142.1" y1="566.7" x2="597.9" y2="566.7" /><line class="roof-line" x1="142.1" y1="546" x2="597.9" y2="546" />
+    <line class="edge edge-frame" x1="162.9" y1="760" x2="162.9" y2="608.1" /><line class="edge edge-frame" x1="301" y1="760" x2="301" y2="608.1" /><line class="edge edge-rail" x1="162.9" y1="760" x2="301" y2="760" /><line class="edge edge-rail" x1="162.9" y1="608.1" x2="301" y2="608.1" /><line class="edge edge-frame" x1="439" y1="760" x2="439" y2="608.1" /><line class="edge edge-rail" x1="301" y1="760" x2="439" y2="760" /><line class="edge edge-rail" x1="301" y1="608.1" x2="439" y2="608.1" /><line class="edge edge-frame" x1="577.1" y1="760" x2="577.1" y2="608.1" /><line class="edge edge-rail" x1="439" y1="760" x2="577.1" y2="760" /><line class="edge edge-rail" x1="439" y1="608.1" x2="577.1" y2="608.1" />
+    <g data-opening="D1"><polygon class="opening" points="314.8,760 425.2,760 425.2,621.9 314.8,621.9" /><line class="opening-bar light" x1="370" y1="621.9" x2="370" y2="760" /><circle class="handle" cx="405.4" cy="695" r="1.4" /><text x="370" y="617.9" class="tag" text-anchor="middle">D1</text></g><g data-brace="X1"><line class="brace" x1="439" y1="760" x2="577.1" y2="608.1" /><text x="514.1" y="680" class="tag">X1</text></g><g data-brace="X2"><line class="brace" x1="577.1" y1="760" x2="439" y2="608.1" /><text x="514.1" y="680" class="tag">X2</text></g>
+    <line class="ground" x1="140.9" y1="760" x2="599.1" y2="760" /><line class="ground-hatch" x1="142.9" y1="760" x2="136.9" y2="766" /><line class="ground-hatch" x1="154.9" y1="760" x2="148.9" y2="766" /><line class="ground-hatch" x1="166.9" y1="760" x2="160.9" y2="766" /><line class="ground-hatch" x1="178.9" y1="760" x2="172.9" y2="766" /><line class="ground-hatch" x1="190.9" y1="760" x2="184.9" y2="766" /><line class="ground-hatch" x1="202.9" y1="760" x2="196.9" y2="766" /><line class="ground-hatch" x1="214.9" y1="760" x2="208.9" y2="766" /><line class="ground-hatch" x1="226.9" y1="760" x2="220.9" y2="766" /><line class="ground-hatch" x1="238.9" y1="760" x2="232.9" y2="766" /><line class="ground-hatch" x1="250.9" y1="760" x2="244.9" y2="766" /><line class="ground-hatch" x1="262.9" y1="760" x2="256.9" y2="766" /><line class="ground-hatch" x1="274.9" y1="760" x2="268.9" y2="766" /><line class="ground-hatch" x1="286.9" y1="760" x2="280.9" y2="766" /><line class="ground-hatch" x1="298.9" y1="760" x2="292.9" y2="766" /><line class="ground-hatch" x1="310.9" y1="760" x2="304.9" y2="766" /><line class="ground-hatch" x1="322.9" y1="760" x2="316.9" y2="766" /><line class="ground-hatch" x1="334.9" y1="760" x2="328.9" y2="766" /><line class="ground-hatch" x1="346.9" y1="760" x2="340.9" y2="766" /><line class="ground-hatch" x1="358.9" y1="760" x2="352.9" y2="766" /><line class="ground-hatch" x1="370.9" y1="760" x2="364.9" y2="766" /><line class="ground-hatch" x1="382.9" y1="760" x2="376.9" y2="766" /><line class="ground-hatch" x1="394.9" y1="760" x2="388.9" y2="766" /><line class="ground-hatch" x1="406.9" y1="760" x2="400.9" y2="766" /><line class="ground-hatch" x1="418.9" y1="760" x2="412.9" y2="766" /><line class="ground-hatch" x1="430.9" y1="760" x2="424.9" y2="766" /><line class="ground-hatch" x1="442.9" y1="760" x2="436.9" y2="766" /><line class="ground-hatch" x1="454.9" y1="760" x2="448.9" y2="766" /><line class="ground-hatch" x1="466.9" y1="760" x2="460.9" y2="766" /><line class="ground-hatch" x1="478.9" y1="760" x2="472.9" y2="766" /><line class="ground-hatch" x1="490.9" y1="760" x2="484.9" y2="766" /><line class="ground-hatch" x1="502.9" y1="760" x2="496.9" y2="766" /><line class="ground-hatch" x1="514.9" y1="760" x2="508.9" y2="766" /><line class="ground-hatch" x1="526.9" y1="760" x2="520.9" y2="766" /><line class="ground-hatch" x1="538.9" y1="760" x2="532.9" y2="766" /><line class="ground-hatch" x1="550.9" y1="760" x2="544.9" y2="766" /><line class="ground-hatch" x1="562.9" y1="760" x2="556.9" y2="766" /><line class="ground-hatch" x1="574.9" y1="760" x2="568.9" y2="766" />
+    <g class="level"><line class="level-line" x1="128.9" y1="760" x2="154.9" y2="760" /><path d="M 142.9 760 l 4 -6 l 4 6 z" /><text x="126.9" y="763" class="small" text-anchor="end">±0.000</text></g><g class="level"><line class="level-line" x1="128.9" y1="608.1" x2="154.9" y2="608.1" /><path d="M 142.9 608.1 l 4 -6 l 4 6 z" /><text x="126.9" y="611.1" class="small" text-anchor="end">+2.200</text></g><g class="level"><line class="level-line" x1="128.9" y1="546" x2="154.9" y2="546" /><path d="M 142.9 546 l 4 -6 l 4 6 z" /><text x="126.9" y="549" class="small" text-anchor="end">+3.100</text></g>
+    <g class="dimension"><line x1="162.9" y1="790" x2="577.1" y2="790" /><line x1="162.9" y1="784" x2="162.9" y2="796" /><line x1="577.1" y1="784" x2="577.1" y2="796" /><text x="370" y="785" class="dimension-text" text-anchor="middle">6 000 mm</text></g>
+  </g>
+
+  <g id="end-view" aria-label="End elevation">
+    <text x="640" y="516" class="view-title">END ELEVATION / GAVLFASADE</text>
+    <polygon class="silhouette" points="665.7,546 914.3,608.1 914.3,760 665.7,760" />
+    <line class="cladding" x1="665.7" y1="732.4" x2="914.3" y2="732.4" /><line class="cladding" x1="665.7" y1="704.8" x2="914.3" y2="704.8" /><line class="cladding" x1="665.7" y1="677.1" x2="914.3" y2="677.1" /><line class="cladding" x1="665.7" y1="649.5" x2="914.3" y2="649.5" /><line class="cladding" x1="665.7" y1="621.9" x2="914.3" y2="621.9" />
+    <polyline class="roof-edge-heavy" points="934.4,613.1 645.6,540.9" />
+    <line class="edge edge-frame" x1="914.3" y1="760" x2="665.7" y2="760" /><line class="edge edge-frame" x1="914.3" y1="760" x2="914.3" y2="608.1" /><line class="edge edge-frame" x1="665.7" y1="760" x2="665.7" y2="546" /><line class="edge edge-frame" x1="914.3" y1="608.1" x2="665.7" y2="546" /><line class="edge edge-frame" x1="914.3" y1="760" x2="665.7" y2="760" /><line class="edge edge-frame" x1="914.3" y1="760" x2="914.3" y2="608.1" /><line class="edge edge-frame" x1="665.7" y1="760" x2="665.7" y2="546" /><line class="edge edge-frame" x1="914.3" y1="608.1" x2="665.7" y2="546" /><line class="edge edge-rail" x1="914.3" y1="760" x2="914.3" y2="760" /><line class="edge edge-rail" x1="665.7" y1="760" x2="665.7" y2="760" /><line class="edge edge-rail" x1="665.7" y1="546" x2="665.7" y2="546" /><line class="edge edge-rail" x1="914.3" y1="608.1" x2="914.3" y2="608.1" />
+    <g data-brace="K1"><line class="brace" x1="665.7" y1="601.2" x2="715.4" y2="559.8" /><text x="696.6" y="576.5" class="tag">K1</text></g>
+    <line class="ground" x1="643.7" y1="760" x2="936.3" y2="760" /><line class="ground-hatch" x1="645.7" y1="760" x2="639.7" y2="766" /><line class="ground-hatch" x1="657.7" y1="760" x2="651.7" y2="766" /><line class="ground-hatch" x1="669.7" y1="760" x2="663.7" y2="766" /><line class="ground-hatch" x1="681.7" y1="760" x2="675.7" y2="766" /><line class="ground-hatch" x1="693.7" y1="760" x2="687.7" y2="766" /><line class="ground-hatch" x1="705.7" y1="760" x2="699.7" y2="766" /><line class="ground-hatch" x1="717.7" y1="760" x2="711.7" y2="766" /><line class="ground-hatch" x1="729.7" y1="760" x2="723.7" y2="766" /><line class="ground-hatch" x1="741.7" y1="760" x2="735.7" y2="766" /><line class="ground-hatch" x1="753.7" y1="760" x2="747.7" y2="766" /><line class="ground-hatch" x1="765.7" y1="760" x2="759.7" y2="766" /><line class="ground-hatch" x1="777.7" y1="760" x2="771.7" y2="766" /><line class="ground-hatch" x1="789.7" y1="760" x2="783.7" y2="766" /><line class="ground-hatch" x1="801.7" y1="760" x2="795.7" y2="766" /><line class="ground-hatch" x1="813.7" y1="760" x2="807.7" y2="766" /><line class="ground-hatch" x1="825.7" y1="760" x2="819.7" y2="766" /><line class="ground-hatch" x1="837.7" y1="760" x2="831.7" y2="766" /><line class="ground-hatch" x1="849.7" y1="760" x2="843.7" y2="766" /><line class="ground-hatch" x1="861.7" y1="760" x2="855.7" y2="766" /><line class="ground-hatch" x1="873.7" y1="760" x2="867.7" y2="766" /><line class="ground-hatch" x1="885.7" y1="760" x2="879.7" y2="766" /><line class="ground-hatch" x1="897.7" y1="760" x2="891.7" y2="766" /><line class="ground-hatch" x1="909.7" y1="760" x2="903.7" y2="766" /><line class="ground-hatch" x1="921.7" y1="760" x2="915.7" y2="766" />
+
+    <g class="dimension"><line x1="665.7" y1="790" x2="914.3" y2="790" /><line x1="665.7" y1="784" x2="665.7" y2="796" /><line x1="914.3" y1="784" x2="914.3" y2="796" /><text x="790" y="785" class="dimension-text" text-anchor="middle">3 600 mm</text></g>
+  </g>
+    <g class="dimension"><line x1="944.3" y1="546" x2="944.3" y2="760" /><line x1="938.3" y1="546" x2="950.3" y2="546" /><line x1="938.3" y1="760" x2="950.3" y2="760" /><text x="938.3" y="653" class="dimension-text" text-anchor="middle" transform="rotate(-90 938.3 653)">3 100 mm</text></g>
+
+  <g id="schedules" aria-label="Schedules">
+    <line class="rule" x1="40" y1="834" x2="960" y2="834" />
+    <text x="60" y="852" class="view-title">OPENINGS / ÅPNINGER</text>
+    <text x="60" y="872" class="head">ID</text><text x="96" y="872" class="head">TYPE</text><text x="190" y="872" class="head">WALL / VEGG</text><text x="280" y="872" class="head">W × H mm</text><text x="372" y="872" class="head">SILL</text><text x="420" y="872" class="head">FROM WALL START</text>
+    <text x="60" y="892" class="cell strong">D1</text><text x="96" y="892" class="cell">Door / Dør</text><text x="190" y="892" class="cell">Near side</text><text x="280" y="892" class="cell">1 600 × 2 000</text><text x="372" y="892" class="cell">0</text><text x="420" y="892" class="cell">2 200</text><text x="60" y="907" class="cell strong">W1</text><text x="96" y="907" class="cell">Window / Vindu</text><text x="190" y="907" class="cell">End</text><text x="280" y="907" class="cell">900 × 900</text><text x="372" y="907" class="cell">1 100</text><text x="420" y="907" class="cell">1 350</text>
+    <text x="60" y="943" class="head">BRACES / SKRÅSTAG</text><text x="280" y="943" class="head">LENGTH</text><text x="372" y="943" class="head">ANGLE</text><text x="60" y="967" class="cell strong">X1</text><text x="96" y="967" class="cell">Brace / Skråstag</text><text x="190" y="967" class="cell">near side</text><text x="280" y="967" class="cell">2 973 mm</text><text x="372" y="967" class="cell">47.7°</text><text x="60" y="982" class="cell strong">X2</text><text x="96" y="982" class="cell">Brace / Skråstag</text><text x="190" y="982" class="cell">near side</text><text x="280" y="982" class="cell">2 973 mm</text><text x="372" y="982" class="cell">47.7°</text><text x="60" y="997" class="cell strong">S1</text><text x="96" y="997" class="cell">Brace / Skråstag</text><text x="190" y="997" class="cell">far side</text><text x="280" y="997" class="cell">3 689 mm</text><text x="372" y="997" class="cell">57.2°</text><text x="60" y="1012" class="cell strong">K1</text><text x="96" y="1012" class="cell">Brace / Skråstag</text><text x="190" y="1012" class="cell">frame 1</text><text x="280" y="1012" class="cell">937 mm</text><text x="372" y="1012" class="cell">39.8°</text>
+    <text x="520" y="852" class="view-title">KEY FIGURES / NØKKELTALL</text>
+    <text x="520" y="892" class="cell">Length / Lengde</text><text x="700" y="892" class="cell strong">6 000 mm</text><text x="520" y="907" class="cell">Width / Bredde</text><text x="700" y="907" class="cell strong">3 600 mm</text><text x="520" y="922" class="cell">Height / Høyde</text><text x="700" y="922" class="cell strong">3 100 mm</text><text x="520" y="937" class="cell">Wall height / Vegghøyde</text><text x="700" y="937" class="cell strong">2 200 mm</text><text x="520" y="952" class="cell">Roof pitch / Takvinkel</text><text x="700" y="952" class="cell strong">14°</text><text x="520" y="967" class="cell">Rafter / Sperre</text><text x="700" y="967" class="cell strong">3 711 mm</text><text x="520" y="982" class="cell">Floor area / Areal</text><text x="700" y="982" class="cell strong">21.6 m²</text><text x="520" y="997" class="cell">Perimeter / Omkrets</text><text x="700" y="997" class="cell strong">19.2 m</text><text x="520" y="1012" class="cell">Frames / Rammer</text><text x="700" y="1012" class="cell strong">4 · 3 bays of 2 000 mm</text><text x="520" y="1027" class="cell">Wall / Vegg</text><text x="700" y="1027" class="cell strong">150 mm</text><text x="520" y="1042" class="cell">Foundation pads / Fundamenter</text><text x="700" y="1042" class="cell strong">8 × 500 × 500 mm</text>
+  </g>
+
+  <g class="audit-layer" aria-label="Technical drawing audit">
+    <text x="191.2" y="394" class="audit-text" text-anchor="middle">1A</text><text x="191.2" y="202" class="audit-text" text-anchor="middle">1B</text><text x="329.3" y="394" class="audit-text" text-anchor="middle">2A</text><text x="329.3" y="202" class="audit-text" text-anchor="middle">2B</text><text x="410.7" y="394" class="audit-text" text-anchor="middle">3A</text><text x="410.7" y="202" class="audit-text" text-anchor="middle">3B</text><text x="548.8" y="394" class="audit-text" text-anchor="middle">4A</text><text x="548.8" y="202" class="audit-text" text-anchor="middle">4B</text><line class="audit-line" x1="162.9" y1="437.2" x2="314.8" y2="437.2" /><line class="audit-line heavy" x1="314.8" y1="437.2" x2="425.2" y2="437.2" /><text x="370" y="297.3" class="audit-text" text-anchor="middle">2 200 + 1 600</text><line class="audit-line" x1="595.1" y1="419.3" x2="595.1" y2="326.1" /><line class="audit-line heavy" x1="595.1" y1="326.1" x2="595.1" y2="263.9" /><text x="544.7" y="309" class="audit-text" text-anchor="middle">1 350 + 900</text><text x="162.9" y="112.7" class="audit-text" text-anchor="middle">x 0</text><text x="301" y="112.7" class="audit-text" text-anchor="middle">x 2 000</text><text x="439" y="112.7" class="audit-text" text-anchor="middle">x 4 000</text><text x="577.1" y="112.7" class="audit-text" text-anchor="middle">x 6 000</text><text x="514.1" y="693" class="audit-text">2 973 mm</text><text x="514.1" y="693" class="audit-text">2 973 mm</text>
+    <line class="audit-line" x1="40" y1="1067.5" x2="960" y2="1067.5" />
+    <text x="60" y="1083.5" class="audit-title">TECHNICAL DRAWING AUDIT / KONTROLL · 11 of 11 checks pass</text>
+    <text x="60" y="1101.5" class="audit-text">✓  D1: inside near side along its length (2200 to 3800 of 6000 mm)</text><text x="520" y="1101.5" class="audit-text">✓  D1: head at 2000 mm is under the wall top (2200 mm)</text><text x="60" y="1115.5" class="audit-text">✓  W1: inside end along its length (1350 to 2250 of 3600 mm)</text><text x="520" y="1115.5" class="audit-text">✓  W1: head at 2000 mm is under the wall top (2538 mm)</text><text x="60" y="1129.5" class="audit-text">✓  X1: both ends are on near side</text><text x="520" y="1129.5" class="audit-text">✓  X2: both ends are on near side</text><text x="60" y="1143.5" class="audit-text">✓  S1: both ends are on far side</text><text x="520" y="1143.5" class="audit-text">✓  3 bays of 2000 mm add up to the length, 6000 mm</text><text x="60" y="1157.5" class="audit-text">✓  4 frames for 3 bays</text><text x="520" y="1157.5" class="audit-text">✓  8 foundation pads, each with its own label</text><text x="60" y="1171.5" class="audit-text">✓  Roof pitch 14° from a rise of 900 mm over 3600 mm</text>
+    <text x="60" y="1201.5" class="audit-text strong">FOUNDATION PADS / FUNDAMENTER · centre of each pad</text>
+    <text x="60" y="1217.5" class="audit-text">1A  x 0 · y 0</text><text x="210" y="1217.5" class="audit-text">1B  x 0 · y 3 600</text><text x="360" y="1217.5" class="audit-text">2A  x 2 000 · y 0</text><text x="510" y="1217.5" class="audit-text">2B  x 2 000 · y 3 600</text><text x="660" y="1217.5" class="audit-text">3A  x 4 000 · y 0</text><text x="810" y="1217.5" class="audit-text">3B  x 4 000 · y 3 600</text><text x="60" y="1230.5" class="audit-text">4A  x 6 000 · y 0</text><text x="210" y="1230.5" class="audit-text">4B  x 6 000 · y 3 600</text>
+  </g>
+
+  <g class="title-block">
+    <rect x="35" y="1345" width="930" height="42" />
+    <line x1="390" y1="1345" x2="390" y2="1387" /><line x1="730" y1="1345" x2="730" y2="1387" /><line x1="855" y1="1345" x2="855" y2="1387" />
+    <text x="48" y="1364" class="title-main">SHED - PLAN AND ELEVATIONS / PLAN OG FASADER</text><text x="48" y="1380" class="title-small">T1 · TEMPLATE-GENERATED</text>
+    <text x="405" y="1364" class="title-small">DIMENSIONS PROVISIONAL / MÅL FORELØPIGE</text><text x="405" y="1380" class="title-small">VERIFY ON SITE / KONTROLLERES PÅ STEDET</text>
+    <text x="745" y="1364" class="title-small">SCALE / MÅLESTOKK</text><text x="745" y="1380" class="title-small">ABOUT 1:50 ON A3 · DRAFT</text>
+    <text x="870" y="1364" class="title-small">DRAWING / TEGNING</text><text x="870" y="1380" class="title-small">B2200-T · T1</text>
+    <text x="500" y="1398" class="provenance" text-anchor="middle">EXAMPLE BUILDING — DRAFT, NOT FOR CONSTRUCTION</text>
+  </g>
+  </svg>
+  <script>
+    // Audit mode is a switch on the page, or site.html#audit for the exporter.
+    (() => {
+      const sheet = document.querySelector("svg.sheet");
+      if (location.hash === "#audit") sheet.classList.add("audit");
+      if (location.hash === "#static" || location.hash === "#audit") return;
+      const bar = document.createElement("label");
+      bar.className = "mode";
+      bar.style.display = "block";
+      bar.innerHTML = '<input type="checkbox"> Technical drawing audit mode';
+      const input = bar.querySelector("input");
+      input.checked = sheet.classList.contains("audit");
+      input.addEventListener("change", () => sheet.classList.toggle("audit", input.checked));
+      document.body.insertBefore(bar, sheet);
+    })();
+  </script>
+</body>
+</html>
