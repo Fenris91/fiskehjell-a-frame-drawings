@@ -25,7 +25,8 @@ drawing, and nothing may be built from it without independent verification.
 ## Generate and verify
 
 Requirements: Node 22 or newer for the drawings; Python 3 with `reportlab`,
-`pypdf` and `pillow`, plus Chrome, Chromium or Edge, for PNG and PDF export.
+`pypdf` and `pillow`, plus a browser, for PNG and PDF export. The browser is
+Chrome, Chromium or Edge, or Firefox together with `geckodriver`.
 
 ```sh
 npm test
@@ -48,8 +49,12 @@ to `dist/`, and the machine-readable data to `output/data/`. Open
 - `output/pdf/a-frame-buildings-no-overview.pdf`, the same set without the site
   map.
 
-The exporter finds a browser on the `PATH` or in the usual install locations.
-Set `CHROME_PATH` to point at one explicitly. Generated files are not committed.
+The exporter finds a browser on the `PATH` or in the usual install locations,
+and prefers Chrome, Chromium or Edge. `--browser firefox` or `--browser chrome`
+chooses one; `CHROME_PATH` points at a Chrome-family executable explicitly.
+Both give the same page counts, page sizes and image sizes. Text edges differ
+slightly between the two, so images are not identical pixel for pixel.
+Generated files are not committed.
 
 For a quicker iteration on one checkpoint page, after a full export:
 

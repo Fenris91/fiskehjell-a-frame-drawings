@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import html as html_lib
 import io
 import json
 import re
 import shutil
+import socket
 import subprocess
 import time
+import urllib.request
 from pathlib import Path
 
 from PIL import Image
@@ -51,6 +54,12 @@ REQUIRED_CHECKPOINT_LABELS = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--browser",
+        choices=("auto", "chrome", "firefox"),
+        default="auto",
+        help="Browser that draws the sheets. auto uses Chrome, Chromium or Edge when found, otherwise Firefox.",
+    )
+    parser.add_argument(
         "--building",
         action="append",
         choices=BUILDINGS,
@@ -84,6 +93,90 @@ def find_chrome() -> Path:
         if candidate.exists():
             return candidate
     raise FileNotFoundError("Chrome, Chromium or Edge is required for HTML export; set CHROME_PATH to its executable")
+
+
+class Firefox:
+    """Firefox through geckodriver and the WebDriver protocol.
+
+    Firefox has no command-line flags for a scaled screenshot or for printing to
+    PDF, so the exporter asks a running browser for them. One browser is started
+    per device scale and reused for every sheet at that scale.
+    """
+
+    def __init__(self) -> None:
+        self.driver = shutil.which("geckodriver")
+        if not self.driver or not shutil.which("firefox"):
+            raise FileNotFoundError("Firefox export needs both firefox and geckodriver on the PATH")
+        self.sessions: dict[int, tuple[subprocess.Popen, str]] = {}
+
+    def _call(self, base: str, method: str, path: str, body=None):
+        data = None if body is None else json.dumps(body).encode()
+        request = urllib.request.Request(base + path, data=data, method=method, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(request, timeout=120) as response:
+            return json.load(response)["value"]
+
+    def _session(self, scale: int) -> str:
+        if scale in self.sessions:
+            return self.sessions[scale][1]
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+        process = subprocess.Popen([self.driver, "--port", str(port)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        base = f"http://127.0.0.1:{port}"
+        deadline = time.monotonic() + 15
+        while True:
+            try:
+                self._call(base, "GET", "/status")
+                break
+            except OSError:
+                if time.monotonic() > deadline:
+                    process.terminate()
+                    raise RuntimeError("geckodriver did not start")
+                time.sleep(0.1)
+        options = {"args": ["-headless", "--width=1600", "--height=1600"], "prefs": {"layout.css.devPixelsPerPx": f"{scale}.0"}}
+        created = self._call(base, "POST", "/session", {"capabilities": {"alwaysMatch": {"browserName": "firefox", "moz:firefoxOptions": options}}})
+        address = f"{base}/session/{created['sessionId']}"
+        self.sessions[scale] = (process, address)
+        return address
+
+    def screenshot(self, html_path: Path, output: Path, scale: int, fragment: str = "") -> None:
+        session = self._session(scale)
+        self._call(session, "POST", "/url", {"url": html_path.as_uri() + fragment})
+        element = self._call(session, "POST", "/element", {"using": "css selector", "value": "svg"})
+        encoded = self._call(session, "GET", f"/element/{next(iter(element.values()))}/screenshot")
+        output.write_bytes(base64.b64decode(encoded))
+
+    def pdf(self, html_path: Path, output: Path) -> None:
+        session = self._session(PNG_SCALE)
+        self._call(session, "POST", "/url", {"url": html_path.as_uri()})
+        # A3 portrait with the sheets' own 5 mm margin, in centimetres.
+        encoded = self._call(session, "POST", "/print", {
+            "page": {"width": 29.7, "height": 42.0},
+            "margin": {"top": 0.5, "bottom": 0.5, "left": 0.5, "right": 0.5},
+            "background": True,
+            "shrinkToFit": True,
+        })
+        output.write_bytes(base64.b64decode(encoded))
+
+    def close(self) -> None:
+        for process, address in self.sessions.values():
+            try:
+                self._call(address, "DELETE", "")
+            except OSError:
+                pass
+            process.terminate()
+        self.sessions.clear()
+
+
+def find_browser(choice: str):
+    if choice == "firefox":
+        return Firefox()
+    if choice == "chrome":
+        return find_chrome()
+    try:
+        return find_chrome()
+    except FileNotFoundError:
+        return Firefox()
 
 
 def wait_for_file(path: Path, timeout: float = 15.0) -> None:
@@ -138,17 +231,20 @@ def verify_checkpoint_labels(html_path: Path) -> None:
 def export_png(chrome: Path, building: str, html_path: Path) -> Path:
     output = PNG_DIR / f"{building}.png"
     output.unlink(missing_ok=True)
-    run_browser(
-        chrome,
-        [
-            "--hide-scrollbars",
-            f"--force-device-scale-factor={PNG_SCALE}",
-            f"--window-size={SHEET_WIDTH},{SHEET_HEIGHT}",
-            f"--screenshot={output}",
-            html_path.as_uri(),
-        ],
-        f"chrome-{building}-png",
-    )
+    if isinstance(chrome, Firefox):
+        chrome.screenshot(html_path, output, PNG_SCALE)
+    else:
+        run_browser(
+            chrome,
+            [
+                "--hide-scrollbars",
+                f"--force-device-scale-factor={PNG_SCALE}",
+                f"--window-size={SHEET_WIDTH},{SHEET_HEIGHT}",
+                f"--screenshot={output}",
+                html_path.as_uri(),
+            ],
+            f"chrome-{building}-png",
+        )
     wait_for_file(output)
     with Image.open(output) as image:
         expected = (SHEET_WIDTH * PNG_SCALE, SHEET_HEIGHT * PNG_SCALE)
@@ -162,16 +258,19 @@ def export_png(chrome: Path, building: str, html_path: Path) -> Path:
 def export_pdf_page(chrome: Path, page_name: str, html_path: Path) -> Path:
     output = TMP_PDF / f"{page_name}.pdf"
     output.unlink(missing_ok=True)
-    run_browser(
-        chrome,
-        [
-            "--no-pdf-header-footer",
-            "--print-to-pdf-no-header",
-            f"--print-to-pdf={output}",
-            html_path.as_uri(),
-        ],
-        f"chrome-{page_name}-pdf",
-    )
+    if isinstance(chrome, Firefox):
+        chrome.pdf(html_path, output)
+    else:
+        run_browser(
+            chrome,
+            [
+                "--no-pdf-header-footer",
+                "--print-to-pdf-no-header",
+                f"--print-to-pdf={output}",
+                html_path.as_uri(),
+            ],
+            f"chrome-{page_name}-pdf",
+        )
     wait_for_file(output)
     reader = PdfReader(str(output))
     if len(reader.pages) != 1:
@@ -236,7 +335,10 @@ def export_site_map_png(chrome):
     if not html_path.exists():
         raise FileNotFoundError(f"Run npm run build first: {html_path} is missing")
     SITE_MAP_PNG.unlink(missing_ok=True)
-    run_browser(chrome, ["--hide-scrollbars", "--force-device-scale-factor=2", "--window-size=1400,1260", f"--screenshot={SITE_MAP_PNG}", html_path.as_uri() + "#static"], "chrome-site-map-png")
+    if isinstance(chrome, Firefox):
+        chrome.screenshot(html_path, SITE_MAP_PNG, 2, "#static")
+    else:
+        run_browser(chrome, ["--hide-scrollbars", "--force-device-scale-factor=2", "--window-size=1400,1260", f"--screenshot={SITE_MAP_PNG}", html_path.as_uri() + "#static"], "chrome-site-map-png")
     wait_for_file(SITE_MAP_PNG)
     with Image.open(SITE_MAP_PNG) as image:
         if image.size != (2800, 2520):
@@ -402,7 +504,15 @@ def main() -> None:
     PNG_DIR.mkdir(parents=True, exist_ok=True)
     PDF_DIR.mkdir(parents=True, exist_ok=True)
     TMP_PDF.mkdir(parents=True, exist_ok=True)
-    chrome = find_chrome()
+    chrome = find_browser(args.browser)
+    try:
+        export_all(args, selected, chrome)
+    finally:
+        if isinstance(chrome, Firefox):
+            chrome.close()
+
+
+def export_all(args, selected, chrome) -> None:
     if args.checkpoint_only:
         for building in selected:
             checkpoint_path = DIST / f"{building}-checkpoint.html"
