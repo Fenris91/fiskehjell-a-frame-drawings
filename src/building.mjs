@@ -23,7 +23,7 @@ function formSolid(form) {
     const profile = profiles.aframe({ widthMm: form.widthMm, heightMm: form.heightMm });
     return extrusionSolid(profile, [stationRun("", form.frames ?? 2)], { lengthMm: form.lengthMm });
   }
-  if (form.kind === "footprint") return prismSolid({ footprint: form.corners, wallHeightMm: form.wallHeightMm });
+  if (form.kind === "footprint") return prismSolid({ footprint: form.corners, wallHeightMm: form.wallHeightMm, roof: form.roof });
   if (form.kind === "round") {
     const steps = form.shape === "dome" ? 6 : 1;
     const top = form.topRadiusMm ?? 0;
@@ -48,7 +48,8 @@ function formSolid(form) {
 
 // The top of a wall, as a height, at a ratio along it.
 function wallTop(solid, wall, ratio) {
-  if (solid.kind === "prism") return solid.wallHeightMm;
+  // Under a sloping roof a wall is as high as the roof is above that point of it.
+  if (solid.kind === "prism") return solid.roofHeightAt(wall.from[0] + (wall.to[0] - wall.from[0]) * ratio, wall.from[1] + (wall.to[1] - wall.from[1]) * ratio);
   if (solid.kind === "revolved") return solid.dims.heightMm;
   const profile = solid.profile;
   if (wall.id === "near" || wall.id === "far") {
@@ -213,6 +214,14 @@ export function buildingModel(spec) {
     facts.wallHeightMm = form.wallHeightMm;
     const angled = walls.filter((wall) => wall.bearingDeg % 90 !== 0);
     check(true, `${walls.length} walls, ${angled.length} of them at an angle to the others`);
+    if (solid.roof.kind !== "flat") {
+      facts.roofPitchDeg = solid.roof.pitchDeg;
+      const ridges = solid.edges.filter(([, , kind]) => kind === "ridge").length;
+      // Every corner of the roof must sit on the roof: at or above the wall height.
+      const low = Math.min(...Object.values(solid.nodes).filter((node) => node.z > 0).map((node) => node.z));
+      check(low >= form.wallHeightMm - 1e-6 && solid.dims.heightMm > form.wallHeightMm,
+        `${solid.roof.kind} roof at ${solid.roof.pitchDeg}°: eaves from ${Math.round(low)} mm, top at ${Math.round(solid.dims.heightMm)} mm${ridges ? `, ${ridges} ridge and hip lines` : ""}`);
+    }
   }
 
   return { spec, solid, walls, openings, braces, pads, checks, facts, thicknessMm: thickness, overhangMm: form.kind === "box" ? form.roof?.overhangMm ?? 0 : 0 };

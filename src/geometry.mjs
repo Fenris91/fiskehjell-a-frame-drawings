@@ -212,9 +212,83 @@ export function extrusionSolid(profile, runs, { lengthMm }) {
   };
 }
 
-// Vertical walls on any footprint, with a flat top: the solid for a building
-// whose plan is not a rectangle. Corners are listed anticlockwise seen from above.
-export function prismSolid({ footprint, wallHeightMm }) {
+// A roof as tilted planes over a footprint. The roof's height at any point is
+// the lowest plane above it, so the ridges, hips and sloping wall tops all follow
+// from the planes; nothing is placed by hand.
+//
+//   monopitch: one plane, rising in the direction `rise` ([x, y], default +y).
+//   gable:     two planes leaning together; `ridge` is the direction the ridge runs.
+//   hip:       one plane rising inward from every wall.
+//
+// Every plane starts at the wall height on the lowest wall and climbs at `pitchDeg`.
+// Gable and hip roofs need a footprint without notches; a monopitch takes any.
+export function roofOver(footprint, wallHeightMm, roof = { kind: "flat" }) {
+  const kind = roof.kind ?? "flat";
+  if (kind === "flat") return { kind, planes: [], faces: [], heightAt: () => wallHeightMm, pitchDeg: 0 };
+  if (!["monopitch", "gable", "hip"].includes(kind)) throw new Error(`Unknown roof kind: ${kind}`);
+  if (!finite(roof.pitchDeg) || roof.pitchDeg <= 0 || roof.pitchDeg >= 80) throw new Error(`A ${kind} roof needs a pitchDeg between 0 and 80`);
+  const slope = Math.tan(roof.pitchDeg * Math.PI / 180);
+  const unit = ([x, y], name) => {
+    const length = Math.hypot(x, y);
+    if (!finite(length) || length === 0) throw new Error(`roof.${name} must be a direction [x, y]`);
+    return [x / length, y / length];
+  };
+  const count = footprint.length;
+  const convex = footprint.every((point, index) => {
+    const a = footprint[(index + 1) % count], b = footprint[(index + 2) % count];
+    return (a[0] - point[0]) * (b[1] - a[1]) - (a[1] - point[1]) * (b[0] - a[0]) >= -1e-6;
+  });
+  if (kind !== "monopitch" && !convex) throw new Error(`A ${kind} roof needs a footprint without notches`);
+  // A plane is z = a x + b y + c.
+  const rising = (direction, from) => ({ a: slope * direction[0], b: slope * direction[1], c: wallHeightMm - slope * from });
+  let planes;
+  if (kind === "monopitch") {
+    const direction = unit(roof.rise ?? [0, 1], "rise");
+    planes = [rising(direction, Math.min(...footprint.map(([x, y]) => x * direction[0] + y * direction[1])))];
+  } else if (kind === "gable") {
+    const along = unit(roof.ridge ?? [1, 0], "ridge");
+    const across = [-along[1], along[0]];
+    const reach = footprint.map(([x, y]) => x * across[0] + y * across[1]);
+    planes = [rising(across, Math.min(...reach)), rising([-across[0], -across[1]], -Math.max(...reach))];
+  } else {
+    planes = footprint.map((from, index) => {
+      const to = footprint[(index + 1) % count];
+      const inward = unit([-(to[1] - from[1]), to[0] - from[0]], "wall");
+      return rising(inward, from[0] * inward[0] + from[1] * inward[1]);
+    });
+  }
+  const heightOn = (plane, [x, y]) => plane.a * x + plane.b * y + plane.c;
+  const heightAt = (x, y) => Math.min(...planes.map((plane) => heightOn(plane, [x, y])));
+  // The part of the footprint each plane covers: where it is the lowest.
+  const faces = planes.map((plane, index) => {
+    let region = footprint.map((point) => [...point]);
+    planes.forEach((other, otherIndex) => {
+      if (otherIndex === index || region.length < 3) return;
+      const beyond = (point) => heightOn(plane, point) - heightOn(other, point);
+      const kept = [];
+      region.forEach((point, at) => {
+        const next = region[(at + 1) % region.length];
+        const here = beyond(point), there = beyond(next);
+        if (here <= 1e-6) kept.push(point);
+        if ((here < -1e-6 && there > 1e-6) || (here > 1e-6 && there < -1e-6)) {
+          const t = here / (here - there);
+          kept.push([point[0] + (next[0] - point[0]) * t, point[1] + (next[1] - point[1]) * t]);
+        }
+      });
+      region = kept;
+    });
+    return region;
+  }).filter((region) => {
+    const doubled = region.reduce((sum, [x, y], at) => { const [nx, ny] = region[(at + 1) % region.length]; return sum + x * ny - nx * y; }, 0);
+    return region.length >= 3 && Math.abs(doubled) > 1;
+  });
+  return { kind, planes, faces, heightAt, pitchDeg: roof.pitchDeg };
+}
+
+// Vertical walls on any footprint: the solid for a building whose plan is not a
+// rectangle. Corners are listed anticlockwise seen from above. The top is flat
+// unless `roof` asks for planes (see roofOver).
+export function prismSolid({ footprint, wallHeightMm, roof = { kind: "flat" } }) {
   if (!Array.isArray(footprint) || footprint.length < 3) throw new Error("A footprint needs at least three corners");
   if (!finite(wallHeightMm) || wallHeightMm <= 0) throw new Error("A prism needs a positive wallHeightMm");
   let doubleArea = 0;
@@ -224,17 +298,56 @@ export function prismSolid({ footprint, wallHeightMm }) {
     doubleArea += x * ny - nx * y;
   });
   if (doubleArea <= 0) throw new Error("List the footprint corners anticlockwise");
+  const cover = roofOver(footprint, wallHeightMm, roof);
   const nodes = {}, edges = [];
+  const common = {
+    kind: "prism", footprint: footprint.map((point) => [...point]), wallHeightMm, areaM2: doubleArea / 2e6,
+    roof: { kind: cover.kind, pitchDeg: cover.pitchDeg }, roofHeightAt: cover.heightAt
+  };
   footprint.forEach(([x, y], index) => {
     const next = (index + 1) % footprint.length;
     nodes[`G${index + 1}`] = { x, y, z: 0 };
-    nodes[`T${index + 1}`] = { x, y, z: wallHeightMm };
-    edges.push([`G${index + 1}`, `G${next + 1}`, "sill"], [`T${index + 1}`, `T${next + 1}`, "roof"], [`G${index + 1}`, `T${index + 1}`, "wall"]);
+    edges.push([`G${index + 1}`, `G${next + 1}`, "sill"]);
   });
-  return {
-    kind: "prism", nodes, edges, footprint: footprint.map((point) => [...point]), wallHeightMm, areaM2: doubleArea / 2e6,
-    dims: { lengthMm: extent(footprint.map(([x]) => x)), widthMm: extent(footprint.map(([, y]) => y)), heightMm: wallHeightMm }
+  if (cover.kind === "flat") {
+    footprint.forEach(([x, y], index) => {
+      const next = (index + 1) % footprint.length;
+      nodes[`T${index + 1}`] = { x, y, z: wallHeightMm };
+      edges.push([`T${index + 1}`, `T${next + 1}`, "roof"], [`G${index + 1}`, `T${index + 1}`, "wall"]);
+    });
+    return { ...common, nodes, edges, dims: { lengthMm: extent(footprint.map(([x]) => x)), widthMm: extent(footprint.map(([, y]) => y)), heightMm: wallHeightMm } };
+  }
+  // Roof corners, named once each however many faces meet there.
+  const names = new Map();
+  const nameOf = ([x, y]) => {
+    const key = `${Math.round(x * 100)}:${Math.round(y * 100)}`;
+    if (!names.has(key)) {
+      names.set(key, `R${names.size + 1}`);
+      nodes[names.get(key)] = { x, y, z: cover.heightAt(x, y) };
+    }
+    return names.get(key);
   };
+  // A roof edge on the outline of the building is an eave; any other is a ridge or hip.
+  const onOutline = (a, b) => footprint.some((from, index) => {
+    const to = footprint[(index + 1) % footprint.length];
+    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    const off = (p) => Math.abs((to[0] - from[0]) * (p[1] - from[1]) - (to[1] - from[1]) * (p[0] - from[0])) / length;
+    return off(a) < 0.01 && off(b) < 0.01;
+  });
+  const drawn = new Set();
+  for (const face of cover.faces) {
+    face.forEach((point, index) => {
+      const next = face[(index + 1) % face.length];
+      const from = nameOf(point), to = nameOf(next);
+      const key = [from, to].sort().join(">");
+      if (from === to || drawn.has(key)) return;
+      drawn.add(key);
+      edges.push([from, to, onOutline(point, next) ? "roof" : "ridge"]);
+    });
+  }
+  footprint.forEach((point, index) => edges.push([`G${index + 1}`, nameOf(point), "wall"]));
+  const top = Math.max(...Object.values(nodes).map((node) => node.z));
+  return { ...common, nodes, edges, dims: { lengthMm: extent(footprint.map(([x]) => x)), widthMm: extent(footprint.map(([, y]) => y)), heightMm: top } };
 }
 
 // A curve turned about a vertical axis: a dome, a cone, a lavvo. The curve is

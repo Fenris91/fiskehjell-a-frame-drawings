@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plan LODGE</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #d9dde0; font-family: Arial, Helvetica, sans-serif; }
+    .sheet { display: block; width: min(100%, 1000px); height: auto; margin: 0 auto; background: #ffffff; }
+    text { fill: #111111; font-size: 10px; font-weight: 400; }
+    .sheet-border, .title-block rect, .title-block line { fill: none; stroke: #111111; stroke-width: 1; }
+    .view-title, .sheet-title { font-size: 15px; font-weight: 500; }
+    .small, .title-small, .provenance, .cell, .head, .tag, .bubble-text { font-size: 8px; }
+    .title-main { font-size: 11px; font-weight: 500; }
+    .room-name { font-size: 11px; font-weight: 700; }
+    .head { font-weight: 700; fill: #5d646a; }
+    .strong { font-weight: 700; }
+    .tag { fill: #1f4f8f; font-weight: 700; }
+    .dimension, .dimension line { fill: none; stroke: #111111; stroke-width: 0.8; }
+    .dimension-text { font-size: 9px; stroke: none; }
+    .rule { stroke: #111111; stroke-width: 0.6; }
+    .wall-poche { fill: #b9c0c6; stroke: #111111; stroke-width: 1.4; }
+    .floor { fill: #ffffff; stroke: #111111; stroke-width: 0.8; }
+    .pad { fill: #e5e7e9; stroke: #111111; stroke-width: 0.7; stroke-dasharray: 3 2; }
+    .grid-line { stroke: #7a8088; stroke-width: 0.6; stroke-dasharray: 12 3 2 3; }
+    .bubble { fill: #ffffff; stroke: #111111; stroke-width: 0.8; }
+    .bubble-text { font-weight: 700; }
+    .roof-edge { fill: none; stroke: #111111; stroke-width: 0.8; stroke-dasharray: 6 4; }
+    .ridge-line { stroke: #111111; stroke-width: 0.8; stroke-dasharray: 14 4 2 4; }
+    .opening-gap { fill: #ffffff; stroke: none; }
+    .jamb { stroke: #111111; stroke-width: 1.2; }
+    .door-leaf { stroke: #1f4f8f; stroke-width: 1.6; }
+    .door-swing { fill: none; stroke: #1f4f8f; stroke-width: 0.7; stroke-dasharray: 3 2; }
+    .glazing { stroke: #1f4f8f; stroke-width: 0.9; }
+    .brace-plan { stroke: #7a8088; stroke-width: 2.4; }
+    .silhouette { fill: #eef1f3; stroke: #111111; stroke-width: 2.2; stroke-linejoin: round; }
+    .roof { fill: #dfe3e6; stroke: #111111; stroke-width: 1.4; }
+    .roof-line { stroke: #9aa1a8; stroke-width: 0.5; }
+    .roof-edge-heavy { fill: none; stroke: #111111; stroke-width: 4; stroke-linecap: square; stroke-linejoin: miter; }
+    .cladding { stroke: #c3c9ce; stroke-width: 0.5; }
+    .edge { fill: none; stroke: #111111; stroke-width: 0.9; }
+    .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
+    .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
+    .opening { fill: #ffffff; stroke: #1f4f8f; stroke-width: 1.3; }
+    .sketch-opening { fill: #dbe7f5; }
+    .opening-bar { stroke: #1f4f8f; stroke-width: 0.8; }
+    .opening-bar.light { stroke-dasharray: 3 2; }
+    .handle { fill: #1f4f8f; }
+    .sill { stroke: #1f4f8f; stroke-width: 1.6; }
+    .brace { stroke: #6b7279; stroke-width: 2.6; stroke-linecap: round; }
+    .ground { stroke: #111111; stroke-width: 1.8; }
+    .ground-hatch { stroke: #111111; stroke-width: 0.5; }
+    .level path { fill: #111111; }
+    .level-line { stroke: #111111; stroke-width: 0.6; }
+    .title-block { fill: none; stroke: #111111; }
+    /* Audit mode: the same drawing with every position and check shown. */
+    .audit-layer { display: none; }
+    .sheet.audit .audit-layer { display: inline; }
+    .audit-text { fill: #a8127d; font-size: 7.5px; }
+    .audit-title { fill: #a8127d; font-size: 11px; font-weight: 700; }
+    .audit-text.failed, .audit-title.failed { fill: #c02626; font-weight: 700; }
+    .audit-line { stroke: #a8127d; stroke-width: 0.6; }
+    .audit-line.heavy { stroke-width: 1.8; }
+    .keynote circle, .keynote-key { fill: #ffffff; stroke: #a8127d; stroke-width: 1; }
+    .keynote-text { fill: #a8127d; font-size: 7px; font-weight: 700; }
+    .mode { max-width: 1000px; margin: 0 auto; padding: 8px 14px; font-size: 14px; background: #ffffff; border-bottom: 1px solid #dfe3e6; }
+    @media print {
+      @page { size: A3 portrait; margin: 5mm; }
+      body { background: #ffffff; }
+      .sheet { width: 100%; }
+      .mode { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sheet" viewBox="0 0 1000 1410" role="img" aria-labelledby="sheet-title sheet-desc" data-form="footprint" data-checks="12" data-failed="0">
+    <title id="sheet-title">LODGE - PLAN AND ELEVATIONS / PLAN OG FASADER</title>
+    <desc id="sheet-desc">Plan, side elevation, end elevation and three-dimensional sketch drawn from one building specification, with schedules and a technical audit layer.</desc>
+    <rect class="sheet-border" x="20" y="18" width="960" height="1380" />
+    <text x="500" y="42" class="sheet-title" text-anchor="middle">PLAN LODGE</text>
+
+  <g id="plan-view" aria-label="Plan">
+    <text x="60" y="84" class="view-title">PLAN / PLANTEGNING</text>
+
+    <rect class="pad" data-pad="C1" x="150.4" y="427.6" width="24.9" height="24.9" /><rect class="pad" data-pad="C2" x="440.4" y="427.6" width="24.9" height="24.9" /><rect class="pad" data-pad="C3" x="564.7" y="324" width="24.9" height="24.9" /><rect class="pad" data-pad="C4" x="564.7" y="137.6" width="24.9" height="24.9" /><rect class="pad" data-pad="C5" x="150.4" y="137.6" width="24.9" height="24.9" />
+    <path class="wall-poche" fill-rule="evenodd" d="M 162.9 440 L 452.9 440 L 577.1 336.4 L 577.1 150 L 162.9 150 Z M 171.1 431.7 L 449.9 431.7 L 568.9 332.5 L 568.9 158.3 L 171.1 158.3 Z" />
+    <polygon class="floor" points="171.1,431.7 449.9,431.7 568.9,332.5 568.9,158.3 171.1,158.3" />
+    <line class="ridge-line" x1="452.9" y1="440" x2="400.4" y2="295" /><line class="ridge-line" x1="400.4" y1="295" x2="307.9" y2="295" /><line class="ridge-line" x1="307.9" y1="295" x2="162.9" y2="440" /><line class="ridge-line" x1="577.1" y1="336.4" x2="450.2" y2="277" /><line class="ridge-line" x1="450.2" y1="277" x2="400.4" y2="295" /><line class="ridge-line" x1="577.1" y1="150" x2="450.2" y2="277" /><line class="ridge-line" x1="162.9" y1="150" x2="307.9" y2="295" />
+
+    <g data-opening="D1"><polygon class="opening-gap" points="229.1,440 270.6,440 270.6,431.7 229.1,431.7" /><line class="jamb" x1="229.1" y1="440" x2="229.1" y2="431.7" /><line class="jamb" x1="270.6" y1="440" x2="270.6" y2="431.7" /><polyline class="door-swing" points="270.6,431.7 269.8,423.6 267.4,415.9 263.6,408.7 258.4,402.4 252.2,397.3 245,393.4 237.2,391.1 229.1,390.3" /><line class="door-leaf" x1="229.1" y1="431.7" x2="229.1" y2="390.3" /><text x="249.9" y="384.2" class="tag" text-anchor="middle">D1</text></g><g data-opening="W1"><polygon class="opening-gap" points="486.4,412.1 543.6,364.3 538.3,358 481.1,405.7" /><line class="jamb" x1="486.4" y1="412.1" x2="481.1" y2="405.7" /><line class="jamb" x1="543.6" y1="364.3" x2="538.3" y2="358" /><line class="glazing" x1="484.5" y1="409.9" x2="541.8" y2="362.1" /><line class="glazing" x1="482.9" y1="407.9" x2="540.2" y2="360.2" /><text x="501.2" y="374.7" class="tag" text-anchor="middle">W1</text></g><g data-opening="W2"><polygon class="opening-gap" points="419.7,150 320.3,150 320.3,158.3 419.7,158.3" /><line class="jamb" x1="419.7" y1="150" x2="419.7" y2="158.3" /><line class="jamb" x1="320.3" y1="150" x2="320.3" y2="158.3" /><line class="glazing" x1="419.7" y1="152.9" x2="320.3" y2="152.9" /><line class="glazing" x1="419.7" y1="155.4" x2="320.3" y2="155.4" /><text x="370" y="174.5" class="tag" text-anchor="middle">W2</text></g><g data-opening="W3"><polygon class="opening-gap" points="162.9,263.9 162.9,326.1 171.1,326.1 171.1,263.9" /><line class="jamb" x1="162.9" y1="263.9" x2="171.1" y2="263.9" /><line class="jamb" x1="162.9" y1="326.1" x2="171.1" y2="326.1" /><line class="glazing" x1="165.8" y1="263.9" x2="165.8" y2="326.1" /><line class="glazing" x1="168.2" y1="263.9" x2="168.2" y2="326.1" /><text x="184.4" y="298" class="tag" text-anchor="middle">W3</text></g>
+
+    <text x="370" y="293" class="room-name" text-anchor="middle">LODGE</text>
+    <text x="370" y="307" class="small" text-anchor="middle">66.3 m²</text>
+
+    <g class="dimension"><line x1="162.9" y1="474" x2="577.1" y2="474" /><line x1="162.9" y1="468" x2="162.9" y2="480" /><line x1="577.1" y1="468" x2="577.1" y2="480" /><text x="370" y="469" class="dimension-text" text-anchor="middle">10 000 mm</text></g>
+    <g class="dimension"><line x1="94.9" y1="150" x2="94.9" y2="440" /><line x1="88.9" y1="150" x2="100.9" y2="150" /><line x1="88.9" y1="440" x2="100.9" y2="440" /><text x="88.9" y="295" class="dimension-text" text-anchor="middle" transform="rotate(-90 88.9 295)">7 000 mm</text></g>
+  </g>
+
+  <g id="sketch-view" aria-label="Three-dimensional sketch">
+    <text x="690" y="84" class="view-title">3D SKETCH / 3D-SKISSE</text>
+    <line class="edge edge-sill" x1="690" y1="297.8" x2="831.9" y2="237.8" /><line class="edge edge-sill" x1="831.9" y1="237.8" x2="909.6" y2="225.7" /><line class="edge edge-sill" x1="909.6" y1="225.7" x2="940" y2="250" /><line class="edge edge-sill" x1="940" y1="250" x2="737.3" y2="335.6" /><line class="edge edge-sill" x1="737.3" y1="335.6" x2="690" y2="297.8" /><line class="edge edge-roof" x1="690" y1="239.2" x2="831.9" y2="179.3" /><line class="edge edge-ridge" x1="831.9" y1="179.3" x2="829.9" y2="167.1" /><line class="edge edge-ridge" x1="829.9" y1="167.1" x2="784.6" y2="186.2" /><line class="edge edge-ridge" x1="784.6" y1="186.2" x2="690" y2="239.2" /><line class="edge edge-roof" x1="831.9" y1="179.3" x2="909.6" y2="167.1" /><line class="edge edge-ridge" x1="909.6" y1="167.1" x2="857.2" y2="164.4" /><line class="edge edge-ridge" x1="857.2" y1="164.4" x2="829.9" y2="167.1" /><line class="edge edge-roof" x1="909.6" y1="167.1" x2="940" y2="191.4" /><line class="edge edge-ridge" x1="940" y1="191.4" x2="857.2" y2="164.4" /><line class="edge edge-roof" x1="940" y1="191.4" x2="737.3" y2="277" /><line class="edge edge-ridge" x1="737.3" y1="277" x2="784.6" y2="186.2" /><line class="edge edge-roof" x1="737.3" y1="277" x2="690" y2="239.2" /><line class="edge edge-wall" x1="690" y1="297.8" x2="690" y2="239.2" /><line class="edge edge-wall" x1="831.9" y1="237.8" x2="831.9" y2="179.3" /><line class="edge edge-wall" x1="909.6" y1="225.7" x2="909.6" y2="167.1" /><line class="edge edge-wall" x1="940" y1="250" x2="940" y2="191.4" /><line class="edge edge-wall" x1="737.3" y1="335.6" x2="737.3" y2="277" />
+    <polygon class="opening sketch-opening" data-opening="D1" points="722.4,284.1 742.7,275.5 742.7,228.2 722.4,236.8" /><polygon class="opening sketch-opening" data-opening="W1" points="852.8,214.3 888.7,208.7 888.7,181.7 852.8,187.3" /><polygon class="opening sketch-opening" data-opening="W2" points="863,262.3 814.3,282.8 814.3,255.8 863,235.2" /><polygon class="opening sketch-opening" data-opening="W3" points="718.7,300.5 708.6,292.3 708.6,265.3 718.7,273.4" />
+
+  </g>
+
+  <g id="side-view" aria-label="Side elevation">
+    <text x="60" y="545.2" class="view-title">SIDE ELEVATION / LANGFASADE</text>
+    <polygon class="silhouette" points="162.9,652.3 307.9,575.2 400.4,575.2 450.2,584.8 577.1,652.3 577.1,760 162.9,760" />
+    <line class="cladding" x1="162.9" y1="743.4" x2="577.1" y2="743.4" /><line class="cladding" x1="162.9" y1="726.9" x2="577.1" y2="726.9" /><line class="cladding" x1="162.9" y1="710.3" x2="577.1" y2="710.3" /><line class="cladding" x1="162.9" y1="693.7" x2="577.1" y2="693.7" /><line class="cladding" x1="162.9" y1="677.1" x2="577.1" y2="677.1" /><line class="cladding" x1="162.9" y1="660.6" x2="577.1" y2="660.6" />
+
+    <line class="edge edge-sill" x1="162.9" y1="760" x2="452.9" y2="760" /><line class="edge edge-sill" x1="452.9" y1="760" x2="577.1" y2="760" /><line class="edge edge-roof" x1="162.9" y1="652.3" x2="452.9" y2="652.3" /><line class="edge edge-ridge" x1="452.9" y1="652.3" x2="400.4" y2="575.2" /><line class="edge edge-ridge" x1="400.4" y1="575.2" x2="307.9" y2="575.2" /><line class="edge edge-ridge" x1="307.9" y1="575.2" x2="162.9" y2="652.3" /><line class="edge edge-roof" x1="452.9" y1="652.3" x2="577.1" y2="652.3" /><line class="edge edge-wall" x1="162.9" y1="760" x2="162.9" y2="652.3" /><line class="edge edge-wall" x1="452.9" y1="760" x2="452.9" y2="652.3" /><line class="edge edge-wall" x1="577.1" y1="760" x2="577.1" y2="652.3" />
+    <g data-opening="D1"><polygon class="opening" points="229.1,760 270.6,760 270.6,673 229.1,673" /><line class="opening-bar light" x1="249.9" y1="673" x2="249.9" y2="760" /><circle class="handle" cx="263.1" cy="720.5" r="1.4" /><text x="249.9" y="669" class="tag" text-anchor="middle">D1</text></g><g data-opening="W1"><polygon class="opening" points="486.4,722.7 543.6,722.7 543.6,673 486.4,673" /><line class="opening-bar" x1="515" y1="673" x2="515" y2="722.7" /><line class="opening-bar" x1="486.4" y1="697.9" x2="543.6" y2="697.9" /><line class="sill" x1="483.4" y1="722.7" x2="546.6" y2="722.7" /><text x="515" y="669" class="tag" text-anchor="middle">W1</text></g>
+    <line class="ground" x1="140.9" y1="760" x2="599.1" y2="760" /><line class="ground-hatch" x1="142.9" y1="760" x2="136.9" y2="766" /><line class="ground-hatch" x1="154.9" y1="760" x2="148.9" y2="766" /><line class="ground-hatch" x1="166.9" y1="760" x2="160.9" y2="766" /><line class="ground-hatch" x1="178.9" y1="760" x2="172.9" y2="766" /><line class="ground-hatch" x1="190.9" y1="760" x2="184.9" y2="766" /><line class="ground-hatch" x1="202.9" y1="760" x2="196.9" y2="766" /><line class="ground-hatch" x1="214.9" y1="760" x2="208.9" y2="766" /><line class="ground-hatch" x1="226.9" y1="760" x2="220.9" y2="766" /><line class="ground-hatch" x1="238.9" y1="760" x2="232.9" y2="766" /><line class="ground-hatch" x1="250.9" y1="760" x2="244.9" y2="766" /><line class="ground-hatch" x1="262.9" y1="760" x2="256.9" y2="766" /><line class="ground-hatch" x1="274.9" y1="760" x2="268.9" y2="766" /><line class="ground-hatch" x1="286.9" y1="760" x2="280.9" y2="766" /><line class="ground-hatch" x1="298.9" y1="760" x2="292.9" y2="766" /><line class="ground-hatch" x1="310.9" y1="760" x2="304.9" y2="766" /><line class="ground-hatch" x1="322.9" y1="760" x2="316.9" y2="766" /><line class="ground-hatch" x1="334.9" y1="760" x2="328.9" y2="766" /><line class="ground-hatch" x1="346.9" y1="760" x2="340.9" y2="766" /><line class="ground-hatch" x1="358.9" y1="760" x2="352.9" y2="766" /><line class="ground-hatch" x1="370.9" y1="760" x2="364.9" y2="766" /><line class="ground-hatch" x1="382.9" y1="760" x2="376.9" y2="766" /><line class="ground-hatch" x1="394.9" y1="760" x2="388.9" y2="766" /><line class="ground-hatch" x1="406.9" y1="760" x2="400.9" y2="766" /><line class="ground-hatch" x1="418.9" y1="760" x2="412.9" y2="766" /><line class="ground-hatch" x1="430.9" y1="760" x2="424.9" y2="766" /><line class="ground-hatch" x1="442.9" y1="760" x2="436.9" y2="766" /><line class="ground-hatch" x1="454.9" y1="760" x2="448.9" y2="766" /><line class="ground-hatch" x1="466.9" y1="760" x2="460.9" y2="766" /><line class="ground-hatch" x1="478.9" y1="760" x2="472.9" y2="766" /><line class="ground-hatch" x1="490.9" y1="760" x2="484.9" y2="766" /><line class="ground-hatch" x1="502.9" y1="760" x2="496.9" y2="766" /><line class="ground-hatch" x1="514.9" y1="760" x2="508.9" y2="766" /><line class="ground-hatch" x1="526.9" y1="760" x2="520.9" y2="766" /><line class="ground-hatch" x1="538.9" y1="760" x2="532.9" y2="766" /><line class="ground-hatch" x1="550.9" y1="760" x2="544.9" y2="766" /><line class="ground-hatch" x1="562.9" y1="760" x2="556.9" y2="766" /><line class="ground-hatch" x1="574.9" y1="760" x2="568.9" y2="766" />
+    <g class="level"><line class="level-line" x1="128.9" y1="760" x2="154.9" y2="760" /><path d="M 142.9 760 l 4 -6 l 4 6 z" /><text x="126.9" y="763" class="small" text-anchor="end">±0.000</text></g><g class="level"><line class="level-line" x1="128.9" y1="652.3" x2="154.9" y2="652.3" /><path d="M 142.9 652.3 l 4 -6 l 4 6 z" /><text x="126.9" y="655.3" class="small" text-anchor="end">+2.600</text></g><g class="level"><line class="level-line" x1="128.9" y1="575.2" x2="154.9" y2="575.2" /><path d="M 142.9 575.2 l 4 -6 l 4 6 z" /><text x="126.9" y="578.2" class="small" text-anchor="end">+4.461</text></g>
+    <g class="dimension"><line x1="162.9" y1="790" x2="577.1" y2="790" /><line x1="162.9" y1="784" x2="162.9" y2="796" /><line x1="577.1" y1="784" x2="577.1" y2="796" /><text x="370" y="785" class="dimension-text" text-anchor="middle">10 000 mm</text></g>
+  </g>
+
+  <g id="end-view" aria-label="End elevation">
+    <text x="640" y="545.2" class="view-title">END ELEVATION / GAVLFASADE</text>
+    <polygon class="silhouette" points="645,652.3 790,575.2 935,652.3 935,760 645,760" />
+    <line class="cladding" x1="645" y1="743.4" x2="935" y2="743.4" /><line class="cladding" x1="645" y1="726.9" x2="935" y2="726.9" /><line class="cladding" x1="645" y1="710.3" x2="935" y2="710.3" /><line class="cladding" x1="645" y1="693.7" x2="935" y2="693.7" /><line class="cladding" x1="645" y1="677.1" x2="935" y2="677.1" /><line class="cladding" x1="645" y1="660.6" x2="935" y2="660.6" />
+
+    <line class="edge edge-sill" x1="645" y1="760" x2="935" y2="760" /><line class="edge edge-ridge" x1="790" y1="575.2" x2="935" y2="652.3" /><line class="edge edge-ridge" x1="645" y1="652.3" x2="790" y2="575.2" /><line class="edge edge-roof" x1="645" y1="652.3" x2="935" y2="652.3" /><line class="edge edge-wall" x1="935" y1="760" x2="935" y2="652.3" /><line class="edge edge-wall" x1="645" y1="760" x2="645" y2="652.3" />
+    <g data-opening="W3"><polygon class="opening" points="758.9,722.7 821.1,722.7 821.1,673 758.9,673" /><line class="opening-bar" x1="790" y1="673" x2="790" y2="722.7" /><line class="opening-bar" x1="758.9" y1="697.9" x2="821.1" y2="697.9" /><line class="sill" x1="755.9" y1="722.7" x2="824.1" y2="722.7" /><text x="790" y="669" class="tag" text-anchor="middle">W3</text></g>
+    <line class="ground" x1="623" y1="760" x2="957" y2="760" /><line class="ground-hatch" x1="625" y1="760" x2="619" y2="766" /><line class="ground-hatch" x1="637" y1="760" x2="631" y2="766" /><line class="ground-hatch" x1="649" y1="760" x2="643" y2="766" /><line class="ground-hatch" x1="661" y1="760" x2="655" y2="766" /><line class="ground-hatch" x1="673" y1="760" x2="667" y2="766" /><line class="ground-hatch" x1="685" y1="760" x2="679" y2="766" /><line class="ground-hatch" x1="697" y1="760" x2="691" y2="766" /><line class="ground-hatch" x1="709" y1="760" x2="703" y2="766" /><line class="ground-hatch" x1="721" y1="760" x2="715" y2="766" /><line class="ground-hatch" x1="733" y1="760" x2="727" y2="766" /><line class="ground-hatch" x1="745" y1="760" x2="739" y2="766" /><line class="ground-hatch" x1="757" y1="760" x2="751" y2="766" /><line class="ground-hatch" x1="769" y1="760" x2="763" y2="766" /><line class="ground-hatch" x1="781" y1="760" x2="775" y2="766" /><line class="ground-hatch" x1="793" y1="760" x2="787" y2="766" /><line class="ground-hatch" x1="805" y1="760" x2="799" y2="766" /><line class="ground-hatch" x1="817" y1="760" x2="811" y2="766" /><line class="ground-hatch" x1="829" y1="760" x2="823" y2="766" /><line class="ground-hatch" x1="841" y1="760" x2="835" y2="766" /><line class="ground-hatch" x1="853" y1="760" x2="847" y2="766" /><line class="ground-hatch" x1="865" y1="760" x2="859" y2="766" /><line class="ground-hatch" x1="877" y1="760" x2="871" y2="766" /><line class="ground-hatch" x1="889" y1="760" x2="883" y2="766" /><line class="ground-hatch" x1="901" y1="760" x2="895" y2="766" /><line class="ground-hatch" x1="913" y1="760" x2="907" y2="766" /><line class="ground-hatch" x1="925" y1="760" x2="919" y2="766" /><line class="ground-hatch" x1="937" y1="760" x2="931" y2="766" />
+
+    <g class="dimension"><line x1="645" y1="790" x2="935" y2="790" /><line x1="645" y1="784" x2="645" y2="796" /><line x1="935" y1="784" x2="935" y2="796" /><text x="790" y="785" class="dimension-text" text-anchor="middle">7 000 mm</text></g>
+  </g>
+    <g class="dimension"><line x1="965" y1="575.2" x2="965" y2="760" /><line x1="959" y1="575.2" x2="971" y2="575.2" /><line x1="959" y1="760" x2="971" y2="760" /><text x="959" y="667.6" class="dimension-text" text-anchor="middle" transform="rotate(-90 959 667.6)">4 461 mm</text></g>
+
+  <g id="schedules" aria-label="Schedules">
+    <line class="rule" x1="40" y1="834" x2="960" y2="834" />
+    <text x="60" y="852" class="view-title">OPENINGS / ÅPNINGER</text>
+    <text x="60" y="872" class="head">ID</text><text x="96" y="872" class="head">TYPE</text><text x="190" y="872" class="head">WALL / VEGG</text><text x="280" y="872" class="head">W × H mm</text><text x="372" y="872" class="head">SILL</text><text x="420" y="872" class="head">FROM WALL START</text>
+    <text x="60" y="892" class="cell strong">D1</text><text x="96" y="892" class="cell">Door / Dør</text><text x="190" y="892" class="cell">Wall 1</text><text x="280" y="892" class="cell">1 000 × 2 100</text><text x="372" y="892" class="cell">0</text><text x="420" y="892" class="cell">1 600</text><text x="60" y="907" class="cell strong">W1</text><text x="96" y="907" class="cell">Window / Vindu</text><text x="190" y="907" class="cell">Wall 2</text><text x="280" y="907" class="cell">1 800 × 1 200</text><text x="372" y="907" class="cell">900</text><text x="420" y="907" class="cell">1 053</text><text x="60" y="922" class="cell strong">W2</text><text x="96" y="922" class="cell">Window / Vindu</text><text x="190" y="922" class="cell">Wall 4</text><text x="280" y="922" class="cell">2 400 × 1 200</text><text x="372" y="922" class="cell">900</text><text x="420" y="922" class="cell">3 800</text><text x="60" y="937" class="cell strong">W3</text><text x="96" y="937" class="cell">Window / Vindu</text><text x="190" y="937" class="cell">Wall 5</text><text x="280" y="937" class="cell">1 500 × 1 200</text><text x="372" y="937" class="cell">900</text><text x="420" y="937" class="cell">2 750</text>
+
+    <text x="520" y="852" class="view-title">KEY FIGURES / NØKKELTALL</text>
+    <text x="520" y="892" class="cell">Length / Lengde</text><text x="700" y="892" class="cell strong">10 000 mm</text><text x="520" y="907" class="cell">Width / Bredde</text><text x="700" y="907" class="cell strong">7 000 mm</text><text x="520" y="922" class="cell">Height / Høyde</text><text x="700" y="922" class="cell strong">4 461 mm</text><text x="520" y="937" class="cell">Wall height / Vegghøyde</text><text x="700" y="937" class="cell strong">2 600 mm</text><text x="520" y="952" class="cell">Roof pitch / Takvinkel</text><text x="700" y="952" class="cell strong">28°</text><text x="520" y="967" class="cell">Floor area / Areal</text><text x="700" y="967" class="cell strong">66.3 m²</text><text x="520" y="982" class="cell">Perimeter / Omkrets</text><text x="700" y="982" class="cell strong">32.4 m</text><text x="520" y="997" class="cell">Wall / Vegg</text><text x="700" y="997" class="cell strong">200 mm</text><text x="520" y="1012" class="cell">Foundation pads / Fundamenter</text><text x="700" y="1012" class="cell strong">5 × 600 × 600 mm</text>
+  </g>
+
+  <g class="audit-layer" aria-label="Technical drawing audit">
+    <text x="181.9" y="423.9" class="audit-text" text-anchor="middle">C1</text><text x="433.8" y="423.9" class="audit-text" text-anchor="middle">C2</text><text x="558.1" y="320.4" class="audit-text" text-anchor="middle">C3</text><text x="558.1" y="172.1" class="audit-text" text-anchor="middle">C4</text><text x="181.9" y="172.1" class="audit-text" text-anchor="middle">C5</text><line class="audit-line" x1="162.9" y1="450.8" x2="229.1" y2="450.8" /><line class="audit-line heavy" x1="229.1" y1="450.8" x2="270.6" y2="450.8" /><g class="keynote" data-keynote="1"><circle cx="249.9" cy="465.7" r="6.5" /><text x="249.9" y="468.5" class="keynote-text" text-anchor="middle">1</text></g><line class="audit-line" x1="459.8" y1="448.3" x2="493.3" y2="420.4" /><line class="audit-line heavy" x1="493.3" y1="420.4" x2="550.5" y2="372.6" /><g class="keynote" data-keynote="2"><circle cx="531.4" cy="407.9" r="6.5" /><text x="531.4" y="410.7" class="keynote-text" text-anchor="middle">2</text></g><line class="audit-line" x1="577.1" y1="139.2" x2="419.7" y2="139.2" /><line class="audit-line heavy" x1="419.7" y1="139.2" x2="320.3" y2="139.2" /><g class="keynote" data-keynote="3"><circle cx="370" cy="124.3" r="6.5" /><text x="370" y="127.1" class="keynote-text" text-anchor="middle">3</text></g><line class="audit-line" x1="152.1" y1="150" x2="152.1" y2="263.9" /><line class="audit-line heavy" x1="152.1" y1="263.9" x2="152.1" y2="326.1" /><g class="keynote" data-keynote="4"><circle cx="137.2" cy="295" r="6.5" /><text x="137.2" y="297.8" class="keynote-text" text-anchor="middle">4</text></g><g class="keynote" data-keynote="5"><circle cx="226.7" cy="465.7" r="6.5" /><text x="226.7" y="468.5" class="keynote-text" text-anchor="middle">5</text></g><g class="keynote" data-keynote="6"><circle cx="496.6" cy="436.9" r="6.5" /><text x="496.6" y="439.7" class="keynote-text" text-anchor="middle">6</text></g><g class="keynote" data-keynote="7"><circle cx="602.8" cy="295.4" r="6.5" /><text x="602.8" y="298.2" class="keynote-text" text-anchor="middle">7</text></g><g class="keynote" data-keynote="8"><circle cx="486" cy="124.3" r="6.5" /><text x="486" y="127.1" class="keynote-text" text-anchor="middle">8</text></g><g class="keynote" data-keynote="9"><circle cx="137.2" cy="213.8" r="6.5" /><text x="137.2" y="216.6" class="keynote-text" text-anchor="middle">9</text></g>
+    <line class="audit-line" x1="40" y1="1037.5" x2="960" y2="1037.5" />
+    <text x="60" y="1053.5" class="audit-title">TECHNICAL DRAWING AUDIT / KONTROLL · 12 of 12 checks pass</text>
+    <text x="60" y="1071.5" class="audit-text">✓  D1: inside wall 1 along its length (1600 to 2600 of 7000 mm)</text><text x="520" y="1071.5" class="audit-text">✓  D1: head at 2100 mm is under the wall top (2600 mm)</text><text x="60" y="1085.5" class="audit-text">✓  W1: inside wall 2 along its length (1053 to 2853 of 3905 mm)</text><text x="520" y="1085.5" class="audit-text">✓  W1: head at 2100 mm is under the wall top (2600 mm)</text><text x="60" y="1099.5" class="audit-text">✓  W2: inside wall 4 along its length (3800 to 6200 of 10000 mm)</text><text x="520" y="1099.5" class="audit-text">✓  W2: head at 2100 mm is under the wall top (2600 mm)</text><text x="60" y="1113.5" class="audit-text">✓  W3: inside wall 5 along its length (2750 to 4250 of 7000 mm)</text><text x="520" y="1113.5" class="audit-text">✓  W3: head at 2100 mm is under the wall top (2600 mm)</text><text x="60" y="1127.5" class="audit-text">✓  Footprint closes with 5 corners, listed anticlockwise</text><text x="520" y="1127.5" class="audit-text">✓  5 foundation pads, each with its own label</text><text x="60" y="1141.5" class="audit-text">✓  5 walls, 1 of them at an angle to the others</text><text x="520" y="1141.5" class="audit-text">✓  hip roof at 28°: eaves from 2600 mm, top at 4461 mm, 7 ridge and hip lines</text>
+    <text x="60" y="1171.5" class="audit-text strong">KEYNOTES / NØKKELNOTER · numbered on the plan</text>
+    <circle class="keynote-key" cx="66" cy="1184.7" r="5" /><text x="66" y="1187.1" class="keynote-text" text-anchor="middle">1</text><text x="78" y="1187.5" class="audit-text">D1 door, wall 1: 1 600 from the wall start, 1 000 wide, sill 0, head 2 100</text><circle class="keynote-key" cx="526" cy="1184.7" r="5" /><text x="526" y="1187.1" class="keynote-text" text-anchor="middle">2</text><text x="538" y="1187.5" class="audit-text">W1 window, wall 2: 1 053 from the wall start, 1 800 wide, sill 900, head 2 100</text><circle class="keynote-key" cx="66" cy="1198.7" r="5" /><text x="66" y="1201.1" class="keynote-text" text-anchor="middle">3</text><text x="78" y="1201.5" class="audit-text">W2 window, wall 4: 3 800 from the wall start, 2 400 wide, sill 900, head 2 100</text><circle class="keynote-key" cx="526" cy="1198.7" r="5" /><text x="526" y="1201.1" class="keynote-text" text-anchor="middle">4</text><text x="538" y="1201.5" class="audit-text">W3 window, wall 5: 2 750 from the wall start, 1 500 wide, sill 900, head 2 100</text><circle class="keynote-key" cx="66" cy="1212.7" r="5" /><text x="66" y="1215.1" class="keynote-text" text-anchor="middle">5</text><text x="78" y="1215.5" class="audit-text">W1: 7 000 mm long, bearing 90°</text><circle class="keynote-key" cx="526" cy="1212.7" r="5" /><text x="526" y="1215.1" class="keynote-text" text-anchor="middle">6</text><text x="538" y="1215.5" class="audit-text">W2: 3 905 mm long, bearing 50.2°</text><circle class="keynote-key" cx="66" cy="1226.7" r="5" /><text x="66" y="1229.1" class="keynote-text" text-anchor="middle">7</text><text x="78" y="1229.5" class="audit-text">W3: 4 500 mm long, bearing 0°</text><circle class="keynote-key" cx="526" cy="1226.7" r="5" /><text x="526" y="1229.1" class="keynote-text" text-anchor="middle">8</text><text x="538" y="1229.5" class="audit-text">W4: 10 000 mm long, bearing 270°</text><circle class="keynote-key" cx="66" cy="1240.7" r="5" /><text x="66" y="1243.1" class="keynote-text" text-anchor="middle">9</text><text x="78" y="1243.5" class="audit-text">W5: 7 000 mm long, bearing 180°</text>
+    <text x="60" y="1269.5" class="audit-text strong">FOUNDATION PADS / FUNDAMENTER · centre of each pad</text>
+    <text x="60" y="1285.5" class="audit-text">C1  x 0 · y 0</text><text x="210" y="1285.5" class="audit-text">C2  x 7 000 · y 0</text><text x="360" y="1285.5" class="audit-text">C3  x 10 000 · y 2 500</text><text x="510" y="1285.5" class="audit-text">C4  x 10 000 · y 7 000</text><text x="660" y="1285.5" class="audit-text">C5  x 0 · y 7 000</text>
+  </g>
+
+  <g class="title-block">
+    <rect x="35" y="1345" width="930" height="42" />
+    <line x1="390" y1="1345" x2="390" y2="1387" /><line x1="730" y1="1345" x2="730" y2="1387" /><line x1="855" y1="1345" x2="855" y2="1387" />
+    <text x="48" y="1364" class="title-main">LODGE - PLAN AND ELEVATIONS / PLAN OG FASADER</text><text x="48" y="1380" class="title-small">T1 · TEMPLATE-GENERATED</text>
+    <text x="405" y="1364" class="title-small">DIMENSIONS PROVISIONAL / MÅL FORELØPIGE</text><text x="405" y="1380" class="title-small">VERIFY ON SITE / KONTROLLERES PÅ STEDET</text>
+    <text x="745" y="1364" class="title-small">SCALE / MÅLESTOKK</text><text x="745" y="1380" class="title-small">ABOUT 1:85 ON A3 · DRAFT</text>
+    <text x="870" y="1364" class="title-small">DRAWING / TEGNING</text><text x="870" y="1380" class="title-small">B4200-T · T1</text>
+    <text x="500" y="1398" class="provenance" text-anchor="middle">EXAMPLE BUILDING — DRAFT, NOT FOR CONSTRUCTION</text>
+  </g>
+  </svg>
+  <script>
+    // Audit mode is a switch on the page, or site.html#audit for the exporter.
+    (() => {
+      const sheet = document.querySelector("svg.sheet");
+      if (location.hash === "#audit") sheet.classList.add("audit");
+      if (location.hash === "#static" || location.hash === "#audit") return;
+      const bar = document.createElement("label");
+      bar.className = "mode";
+      bar.style.display = "block";
+      bar.innerHTML = '<input type="checkbox"> Technical drawing audit mode';
+      const input = bar.querySelector("input");
+      input.checked = sheet.classList.contains("audit");
+      input.addEventListener("change", () => sheet.classList.toggle("audit", input.checked));
+      document.body.insertBefore(bar, sheet);
+    })();
+  </script>
+</body>
+</html>

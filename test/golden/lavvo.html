@@ -41,7 +41,7 @@
     .roof-edge-heavy { fill: none; stroke: #111111; stroke-width: 4; stroke-linecap: square; stroke-linejoin: miter; }
     .cladding { stroke: #c3c9ce; stroke-width: 0.5; }
     .edge { fill: none; stroke: #111111; stroke-width: 0.9; }
-    .edge-sill, .edge-rail { stroke-width: 1.6; }
+    .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
     .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
     .opening { fill: #ffffff; stroke: #1f4f8f; stroke-width: 1.3; }
     .sketch-opening { fill: #dbe7f5; }
@@ -63,6 +63,8 @@
     .audit-text.failed, .audit-title.failed { fill: #c02626; font-weight: 700; }
     .audit-line { stroke: #a8127d; stroke-width: 0.6; }
     .audit-line.heavy { stroke-width: 1.8; }
+    .keynote circle, .keynote-key { fill: #ffffff; stroke: #a8127d; stroke-width: 1; }
+    .keynote-text { fill: #a8127d; font-size: 7px; font-weight: 700; }
     .mode { max-width: 1000px; margin: 0 auto; padding: 8px 14px; font-size: 14px; background: #ffffff; border-bottom: 1px solid #dfe3e6; }
     @media print {
       @page { size: A3 portrait; margin: 5mm; }
@@ -139,12 +141,14 @@
   </g>
 
   <g class="audit-layer" aria-label="Technical drawing audit">
-    <text x="502" y="285" class="audit-text" text-anchor="middle">M1</text><text x="482.5" y="238.6" class="audit-text" text-anchor="middle">M2</text><text x="429.5" y="185.5" class="audit-text" text-anchor="middle">M3</text><text x="357" y="166.1" class="audit-text" text-anchor="middle">M4</text><text x="310.6" y="185.5" class="audit-text" text-anchor="middle">M5</text><text x="257.5" y="238.6" class="audit-text" text-anchor="middle">M6</text><text x="238.1" y="311" class="audit-text" text-anchor="middle">M7</text><text x="257.5" y="357.5" class="audit-text" text-anchor="middle">M8</text><text x="310.5" y="410.5" class="audit-text" text-anchor="middle">M9</text><text x="383" y="430" class="audit-text" text-anchor="middle">M10</text><text x="429.5" y="410.5" class="audit-text" text-anchor="middle">M11</text><text x="482.5" y="357.5" class="audit-text" text-anchor="middle">M12</text>
+    <text x="502" y="285" class="audit-text" text-anchor="middle">M1</text><text x="482.5" y="238.6" class="audit-text" text-anchor="middle">M2</text><text x="429.5" y="185.5" class="audit-text" text-anchor="middle">M3</text><text x="357" y="166.1" class="audit-text" text-anchor="middle">M4</text><text x="310.6" y="185.5" class="audit-text" text-anchor="middle">M5</text><text x="257.5" y="238.6" class="audit-text" text-anchor="middle">M6</text><text x="238.1" y="311" class="audit-text" text-anchor="middle">M7</text><text x="257.5" y="357.5" class="audit-text" text-anchor="middle">M8</text><text x="310.5" y="410.5" class="audit-text" text-anchor="middle">M9</text><text x="383" y="430" class="audit-text" text-anchor="middle">M10</text><text x="429.5" y="410.5" class="audit-text" text-anchor="middle">M11</text><text x="482.5" y="357.5" class="audit-text" text-anchor="middle">M12</text><g class="keynote" data-keynote="1"><circle cx="370" cy="460.8" r="6.5" /><text x="370" y="463.6" class="keynote-text" text-anchor="middle">1</text></g>
     <line class="audit-line" x1="40" y1="1022.5" x2="960" y2="1022.5" />
     <text x="60" y="1038.5" class="audit-title">TECHNICAL DRAWING AUDIT / KONTROLL · 3 of 3 checks pass</text>
     <text x="60" y="1056.5" class="audit-text">✓  D1: 1200 × 2000 fits the wall at bearing 270°</text><text x="520" y="1056.5" class="audit-text">✓  12 ribs at 30° spacing</text><text x="60" y="1070.5" class="audit-text">✓  12 foundation pads, each with its own label</text>
-    <text x="60" y="1100.5" class="audit-text strong">FOUNDATION PADS / FUNDAMENTER · centre of each pad</text>
-    <text x="60" y="1116.5" class="audit-text">M1  x 8 000 · y 4 000</text><text x="210" y="1116.5" class="audit-text">M2  x 7 464 · y 6 000</text><text x="360" y="1116.5" class="audit-text">M3  x 6 000 · y 7 464</text><text x="510" y="1116.5" class="audit-text">M4  x 4 000 · y 8 000</text><text x="660" y="1116.5" class="audit-text">M5  x 2 000 · y 7 464</text><text x="810" y="1116.5" class="audit-text">M6  x 536 · y 6 000</text><text x="60" y="1129.5" class="audit-text">M7  x 0 · y 4 000</text><text x="210" y="1129.5" class="audit-text">M8  x 536 · y 2 000</text><text x="360" y="1129.5" class="audit-text">M9  x 2 000 · y 536</text><text x="510" y="1129.5" class="audit-text">M10  x 4 000 · y 0</text><text x="660" y="1129.5" class="audit-text">M11  x 6 000 · y 536</text><text x="810" y="1129.5" class="audit-text">M12  x 7 464 · y 2 000</text>
+    <text x="60" y="1100.5" class="audit-text strong">KEYNOTES / NØKKELNOTER · numbered on the plan</text>
+    <circle class="keynote-key" cx="66" cy="1113.7" r="5" /><text x="66" y="1116.1" class="keynote-text" text-anchor="middle">1</text><text x="78" y="1116.5" class="audit-text">D1 door, bearing 270°: 1 200 wide, sill 0, head 2 000</text>
+    <text x="60" y="1142.5" class="audit-text strong">FOUNDATION PADS / FUNDAMENTER · centre of each pad</text>
+    <text x="60" y="1158.5" class="audit-text">M1  x 8 000 · y 4 000</text><text x="210" y="1158.5" class="audit-text">M2  x 7 464 · y 6 000</text><text x="360" y="1158.5" class="audit-text">M3  x 6 000 · y 7 464</text><text x="510" y="1158.5" class="audit-text">M4  x 4 000 · y 8 000</text><text x="660" y="1158.5" class="audit-text">M5  x 2 000 · y 7 464</text><text x="810" y="1158.5" class="audit-text">M6  x 536 · y 6 000</text><text x="60" y="1171.5" class="audit-text">M7  x 0 · y 4 000</text><text x="210" y="1171.5" class="audit-text">M8  x 536 · y 2 000</text><text x="360" y="1171.5" class="audit-text">M9  x 2 000 · y 536</text><text x="510" y="1171.5" class="audit-text">M10  x 4 000 · y 0</text><text x="660" y="1171.5" class="audit-text">M11  x 6 000 · y 536</text><text x="810" y="1171.5" class="audit-text">M12  x 7 464 · y 2 000</text>
   </g>
 
   <g class="title-block">

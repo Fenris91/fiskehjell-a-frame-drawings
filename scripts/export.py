@@ -33,7 +33,7 @@ SITE_MAP_PNG = PNG_DIR / "site-top-down-map.png"
 BUILDINGS = ("hall", "shell6", "shell6d", "shell8")
 # Buildings drawn by the generic sheet (src/render-building.mjs). Page 2 of each
 # is the same sheet with its technical audit layer switched on.
-FORMS = ("cabin", "shed", "wedge", "rack", "arch-hall", "segmental-hall", "pointed-hall", "lavvo", "dome")
+FORMS = ("cabin", "shed", "wedge", "lodge", "taper", "rack", "arch-hall", "segmental-hall", "pointed-hall", "lavvo", "dome")
 FORM_SUMMARY = ROOT / "output" / "data" / "buildings.json"
 FORM_LABELS = (
     "PLAN / PLANTEGNING",

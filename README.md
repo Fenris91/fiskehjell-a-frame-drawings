@@ -37,7 +37,9 @@ openings schedule and key figures.
 | --- | --- | --- |
 | `cabin` | Box, gable roof | Walls with thickness, doors with swings, windows, roof overhang, knee braces |
 | `shed` | Box, mono-pitch roof | A lean-to roof, a wire cross and a strut: sloped members with their angles |
-| `wedge` | Diagonal footprint | A plan that is not a rectangle, with a door on the angled wall |
+| `wedge` | Diagonal footprint, mono-pitch roof | A plan that is not a rectangle, with a door on the angled wall |
+| `lodge` | Footprint with a cut corner, hip roof | A roof plane rising inward from every wall |
+| `taper` | Tapering footprint, gable roof | Eaves that climb as the plan narrows |
 | `rack` | A-frame | The fiskehjell section itself, drawn by this sheet straight from the geometry |
 | `arch-hall` | Arch, semicircle | A curved rib extruded along the building |
 | `segmental-hall` | Arch, segmental | A low, wide rib that rises less than half its span |
@@ -51,6 +53,10 @@ size:
 - `form.kind` is `aframe`, `box` (with `roof.kind` `flat`, `monopitch` or `gable`), `arch`
   (`semicircle`, `segmental` or `pointed`), `footprint` (corners listed
   anticlockwise, with a wall height) or `round` (`cone` or `dome`).
+- A footprint takes a `roof`: `monopitch` (with a `rise` direction), `gable`
+  (with a `ridge` direction) or `hip`, each at a `pitchDeg`. The roof is the
+  lowest of its tilted planes, so ridges, hips and sloping wall tops follow from
+  the planes. Gable and hip roofs need a footprint without notches.
 - An opening names its wall and its centre as a ratio along that wall, seen from
   outside. Walls are `near`, `far`, `start` and `end` on a box or arch, a number
   on a footprint, and a `bearingDeg` on a round building.
@@ -61,9 +67,11 @@ size:
 Every sheet carries an audit layer that is off by default. Tick **Technical
 drawing audit mode** above the sheet in a browser, or open `cabin.html#audit`.
 It adds, in one colour over the same drawing: the coordinate of every frame,
-the label and position of every foundation pad, each opening's distance from
-the start of its wall, wall lengths and bearings on a diagonal footprint, and a
-list of checks with a tick or a cross. The checks cover openings that run past
+the label of every foundation pad, and numbered keynotes on the plan for each
+opening, each wall of a diagonal footprint and each brace. Below the drawing it
+lists the checks with a tick or a cross, the text of every keynote, and the
+position of every pad. Keynote markers slide along their wall until clear, so
+they never sit on top of each other. The checks cover openings that run past
 a wall, stand taller than it or overlap each other, braces that leave their
 wall, bays that do not add up, and the roof pitch or arch radius.
 

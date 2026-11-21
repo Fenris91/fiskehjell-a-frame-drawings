@@ -116,6 +116,9 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     over > 0 ? `<polygon class="roof-edge" points="${points([P(-over, -over), P(L + over, -over), P(L + over, W + over), P(-over, W + over)])}" />` : "",
     box.ridge ? `${line(P(-over, W / 2), P(L + over, W / 2), "ridge-line")}${text(P(L, W / 2)[0] - 4, P(L, W / 2)[1] - 4, "RIDGE / MØNE", "small", 'text-anchor="end"')}` : ""
   ].join("") : "";
+  // Ridges and hips of a roof on a footprint building, seen from above.
+  const prismRoofPlan = solid.kind === "prism" ? solid.edges.filter(([, , kind]) => kind === "ridge").map(([from, to]) =>
+    line(P(solid.nodes[from].x, solid.nodes[from].y), P(solid.nodes[to].x, solid.nodes[to].y), "ridge-line")).join("") : "";
   const archPlan = arch ? `${line(P(0, W / 2), P(L, W / 2), "ridge-line")}${text(P(L, W / 2)[0] - 4, P(L, W / 2)[1] - 4, "CROWN / TOPP", "small", 'text-anchor="end"')}` : "";
   const ribsPlan = solid.kind === "revolved" ? solid.edges.filter(([, , kind]) => kind === "rib" || kind === "ring").map(([from, to, kind]) =>
     line(P(solid.nodes[from].x, solid.nodes[from].y), P(solid.nodes[to].x, solid.nodes[to].y), `edge edge-${kind} light`)).join("") : "";
@@ -129,7 +132,7 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     ${planPads.join("")}
     <path class="wall-poche" fill-rule="evenodd" d="${ring(outer)} ${ring(inner)}" />
     <polygon class="floor" points="${points(inner.map(([x, y]) => P(x, y)))}" />
-    ${ribsPlan}${archPlan}
+    ${ribsPlan}${archPlan}${prismRoofPlan}
     ${planGrid.join("")}${acrossGrid.join("")}
     ${planOpenings.join("")}
     ${braces.filter((brace) => brace.wall !== undefined).map((brace) => line(P(brace.from.x, brace.from.y), P(brace.to.x, brace.to.y), "brace-plan")).join("")}
@@ -250,7 +253,8 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
   const figures = [
     ["Length / Lengde", `${mm(L)} mm`], ["Width / Bredde", `${mm(W)} mm`], ["Height / Høyde", `${mm(H)} mm`],
     ...(facts.wallHeightMm ? [["Wall height / Vegghøyde", `${mm(facts.wallHeightMm)} mm`]] : []),
-    ...(facts.roofPitchDeg ? [["Roof pitch / Takvinkel", `${facts.roofPitchDeg}°`], ["Rafter / Sperre", `${mm(facts.rafterMm)} mm`]] : []),
+    ...(facts.roofPitchDeg ? [["Roof pitch / Takvinkel", `${facts.roofPitchDeg}°`]] : []),
+    ...(facts.rafterMm ? [["Rafter / Sperre", `${mm(facts.rafterMm)} mm`]] : []),
     ...(facts.radiusMm ? [["Radius", `${mm(facts.radiusMm)} mm`]] : []),
     ...(facts.riseMm ? [["Rise / Pilhøyde", `${mm(facts.riseMm)} mm`]] : []),
     ["Floor area / Areal", `${facts.areaM2.toFixed(1)} m²`], ["Perimeter / Omkrets", `${facts.perimeterM.toFixed(1)} m`],
@@ -276,36 +280,62 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
   // ---- Audit layer ------------------------------------------------------------------
   // Every position the drawing was made from, and the checks on them. Hidden
   // until audit mode is on; the drawing underneath is the same either way.
+  // Pads sit on a regular grid, so their labels go beside them. Everything else is
+  // a numbered keynote: a small marker on the plan and its text in a list below,
+  // so no amount of detail can pile labels on top of each other.
   const auditPads = pads.map((pad) => { const [x, y] = P(pad.x + (pad.x > centre.x ? -1 : 1) * (thicknessMm + 260), pad.y + (pad.y > centre.y ? -1 : 1) * (thicknessMm + 260)); return text(x, y + 3, pad.id, "audit-text", 'text-anchor="middle"'); });
-  const auditOpenings = openings.filter((opening) => opening.offsetMm !== null).map((opening) => {
+  const keynotes = [];
+  const placed = [];
+  // A marker slides along its wall until it is clear of the markers already there.
+  const keynote = (at, slide, note) => {
+    let [x, y] = at;
+    for (let tries = 0; tries < 12 && placed.some(([px, py]) => Math.hypot(px - x, py - y) < 15); tries += 1) { x += slide[0] * 16; y += slide[1] * 16; }
+    placed.push([x, y]);
+    keynotes.push(note);
+    const number = keynotes.length;
+    return `<g class="keynote" data-keynote="${number}"><circle cx="${n(x)}" cy="${n(y)}" r="6.5" />${text(x, y + 2.8, number, "keynote-text", 'text-anchor="middle"')}</g>`;
+  };
+  const screenAlong = (from, to) => { const a = P(from[0], from[1]), b = P(to[0], to[1]); const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / length, (b[1] - a[1]) / length]; };
+  const auditOpenings = openings.map((opening) => {
     const [a, b] = opening.quad;
     const out = (p, distance) => P(p.x + opening.normal[0] * distance, p.y + opening.normal[1] * distance);
-    const start = out({ x: opening.wall.from[0], y: opening.wall.from[1] }, 260), from = out(a, 260), to = out(b, 260);
-    const label = out({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, -thicknessMm - (opening.kind === "door" ? opening.widthMm + 220 : 320));
-    return `${line(start, from, "audit-line")}${line(from, to, "audit-line heavy")}${text(label[0], label[1] + 14, `${mm(opening.offsetMm)} + ${mm(opening.widthMm)}`, "audit-text", 'text-anchor="middle"')}`;
+    const where = opening.wall.round ? `bearing ${opening.bearingDeg ?? 0}°` : opening.wall.label.toLowerCase();
+    const note = `${opening.id} ${opening.kind}, ${where}: ${opening.offsetMm === null ? "" : `${mm(opening.offsetMm)} from the wall start, `}${mm(opening.widthMm)} wide, sill ${mm(opening.sillMm)}, head ${mm(opening.sillMm + opening.heightMm)}`;
+    const chain = opening.offsetMm === null ? "" : `${line(out({ x: opening.wall.from[0], y: opening.wall.from[1] }, 260), out(a, 260), "audit-line")}${line(out(a, 260), out(b, 260), "audit-line heavy")}`;
+    return chain + keynote(out({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, 620), screenAlong([a.x, a.y], [b.x, b.y]), note);
   });
   const auditWalls = walls.filter((wall) => !wall.round && solid.kind === "prism").map((wall) => {
-    const middle = P((wall.from[0] + wall.to[0]) / 2 + wall.normal[0] * 700, (wall.from[1] + wall.to[1]) / 2 + wall.normal[1] * 700);
-    return text(middle[0], middle[1], `${wall.id} ${mm(wall.lengthMm)} mm · ${wall.bearingDeg}°`, "audit-text", 'text-anchor="middle"');
+    const quarter = [wall.from[0] + (wall.to[0] - wall.from[0]) * 0.22, wall.from[1] + (wall.to[1] - wall.from[1]) * 0.22];
+    return keynote(P(quarter[0] + wall.normal[0] * 620, quarter[1] + wall.normal[1] * 620), screenAlong(wall.from, wall.to), `${wall.id}: ${mm(wall.lengthMm)} mm long, bearing ${wall.bearingDeg}°`);
   });
-  const auditStations = stations.map((station) => text(P(station.x, 0)[0], planTop - 58, `x ${mm(station.x)}`, "audit-text", 'text-anchor="middle"'));
-  const auditBraces = braces.map((brace) => { const a = S(brace.from.x, brace.from.z), b = S(brace.to.x, brace.to.z); return brace.wall !== undefined && brace.wall === "near" ? text((a[0] + b[0]) / 2 + 6, (a[1] + b[1]) / 2 + 9, `${mm(brace.lengthMm)} mm`, "audit-text") : ""; });
+  const auditBraces = braces.map((brace) => keynote(P((brace.from.x + brace.to.x) / 2, (brace.from.y + brace.to.y) / 2), [1, 0],
+    `${brace.id} brace, ${brace.where}: ${mm(brace.lengthMm)} mm at ${brace.angleDeg}° from level, ${mm(brace.from.z)} to ${mm(brace.to.z)} above the floor`));
+  // Frame positions sit above their bubbles; close frames take turns on two rows.
+  const tight = stations.length > 1 && (stations[1].x - stations[0].x) * scale < 34;
+  const auditStations = stations.map((station, index) => text(P(station.x, 0)[0], planTop - 58 - (tight && index % 2 ? 9 : 0), `x ${mm(station.x)}`, "audit-text", 'text-anchor="middle"'));
   const failed = checks.filter((item) => !item.ok).length;
   const checkTop = Math.max(tableTop + 40 + (figures.length + 1.5) * 15, tableTop + 40 + (openings.length + braces.length + 5) * 15);
   const checkRows = checks.map((item, index) => {
     const column = index % 2, row = Math.floor(index / 2);
     return text(60 + column * 460, checkTop + 22 + row * 14, `${item.ok ? "✓" : "✗"}  ${item.text}`, item.ok ? "audit-text" : "audit-text failed");
   });
+  const noteTop = checkTop + 22 + Math.ceil(checks.length / 2) * 14 + 16;
+  const noteRows = keynotes.map((note, index) => {
+    const column = index % 2, row = Math.floor(index / 2);
+    return `<circle class="keynote-key" cx="${66 + column * 460}" cy="${noteTop + 13.2 + row * 14}" r="5" />${text(66 + column * 460, noteTop + 15.6 + row * 14, index + 1, "keynote-text", 'text-anchor="middle"')}${text(78 + column * 460, noteTop + 16 + row * 14, note, "audit-text")}`;
+  });
   // Where every foundation pad sits, in millimetres from the building's origin.
-  const padTop = checkTop + 22 + Math.ceil(checks.length / 2) * 14 + 16;
+  const padTop = noteTop + (keynotes.length ? 22 + Math.ceil(keynotes.length / 2) * 14 : 0) + 6;
   const perRow = 6;
   const padRows = pads.map((pad, index) => text(60 + (index % perRow) * 150, padTop + 16 + Math.floor(index / perRow) * 13, `${pad.id}  x ${mm(pad.x)} · y ${mm(pad.y)}`, "audit-text"));
   const auditLayer = `
   <g class="audit-layer" aria-label="Technical drawing audit">
-    ${auditPads.join("")}${auditOpenings.join("")}${auditWalls.join("")}${auditStations.join("")}${auditBraces.join("")}
+    ${auditPads.join("")}${auditOpenings.join("")}${auditWalls.join("")}${auditBraces.join("")}${auditStations.join("")}
     ${line([40, checkTop - 12], [960, checkTop - 12], "audit-line")}
     ${text(60, checkTop + 4, `TECHNICAL DRAWING AUDIT / KONTROLL · ${checks.length - failed} of ${checks.length} checks pass`, failed ? "audit-title failed" : "audit-title")}
     ${checkRows.join("")}
+    ${keynotes.length ? text(60, noteTop, "KEYNOTES / NØKKELNOTER · numbered on the plan", "audit-text strong") : ""}
+    ${noteRows.join("")}
     ${text(60, padTop, "FOUNDATION PADS / FUNDAMENTER · centre of each pad", "audit-text strong")}
     ${padRows.join("")}
   </g>`;
@@ -365,7 +395,7 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     .roof-edge-heavy { fill: none; stroke: ${INK}; stroke-width: 4; stroke-linecap: square; stroke-linejoin: miter; }
     .cladding { stroke: #c3c9ce; stroke-width: 0.5; }
     .edge { fill: none; stroke: ${INK}; stroke-width: 0.9; }
-    .edge-sill, .edge-rail { stroke-width: 1.6; }
+    .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
     .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
     .opening { fill: #ffffff; stroke: ${OPENING}; stroke-width: 1.3; }
     .sketch-opening { fill: #dbe7f5; }
@@ -387,6 +417,8 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     .audit-text.failed, .audit-title.failed { fill: #c02626; font-weight: 700; }
     .audit-line { stroke: ${AUDIT}; stroke-width: 0.6; }
     .audit-line.heavy { stroke-width: 1.8; }
+    .keynote circle, .keynote-key { fill: #ffffff; stroke: ${AUDIT}; stroke-width: 1; }
+    .keynote-text { fill: ${AUDIT}; font-size: 7px; font-weight: 700; }
     .mode { max-width: 1000px; margin: 0 auto; padding: 8px 14px; font-size: 14px; background: #ffffff; border-bottom: 1px solid #dfe3e6; }
     @media print {
       @page { size: A3 portrait; margin: 5mm; }

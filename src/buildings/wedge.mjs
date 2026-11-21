@@ -1,4 +1,5 @@
-// A building on a diagonal footprint: one wall runs at an angle to the others.
+// A building on a diagonal footprint: one wall runs at an angle to the others,
+// under a mono-pitch roof that rises toward the far side.
 // Corners are listed anticlockwise seen from above.
 export const wedge = {
   id: "wedge",
@@ -6,7 +7,7 @@ export const wedge = {
   drawingTitle: "WEDGE - PLAN AND ELEVATIONS / PLAN OG FASADER",
   drawingNumber: "B4100-T",
   revision: "T1",
-  form: { kind: "footprint", wallHeightMm: 3000, corners: [[0, 0], [8000, 0], [11000, 3000], [11000, 6000], [0, 6000]] },
+  form: { kind: "footprint", wallHeightMm: 3000, corners: [[0, 0], [8000, 0], [11000, 3000], [11000, 6000], [0, 6000]], roof: { kind: "monopitch", pitchDeg: 8, rise: [0, 1] } },
   wallThicknessMm: 200,
   openings: [
     { id: "D1", kind: "door", wall: 2, center: 0.5, widthMm: 1200, heightMm: 2100 },
