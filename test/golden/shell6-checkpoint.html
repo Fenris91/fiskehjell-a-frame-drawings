@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHELL 6 dimensions and labels</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #d9dde0; font-family: Arial, Helvetica, sans-serif; }
+    .sheet { display: block; width: min(100%, 1000px); height: 1410px; margin: 0 auto; background: #ffffff; }
+    text { fill: #111111; font-size: 10px; font-weight: 400; }
+    .sheet-border, .panel, .footer, .footer line { fill: none; stroke: #111111; stroke-width: 1; }
+    .sheet-title { font-size: 18px; font-weight: 500; }
+    .sheet-subtitle, .section-title { font-size: 13px; font-weight: 500; }
+    .section-note, .row-label, .row-value, .legend-line, .legend-green { font-size: 9px; }
+    .section-note, .layer-field-note, .layer-subtitle { fill: #5f666b; }
+    .row-value, .table-cell { font-variant-numeric: tabular-nums; }
+    .row-rule, .table-rule { stroke: #cdd2d6; stroke-width: 0.8; }
+    .table-head { font-size: 8px; font-weight: 500; }
+    .table-id { font-size: 9px; font-weight: 500; }
+    .table-cell { font-size: 8px; }
+    .legend-green { fill: #00a84f; font-weight: 500; }
+    .layer-field { fill: #eef1f3; fill-opacity: 0.24; stroke: #111111; stroke-width: 1.2; }
+    .layer-window { fill: #ffffff; stroke: #111111; stroke-width: 1; }
+    .layer-field-note, .layer-subtitle, .map-axis-label { font-size: 8px; }
+    .layer-title { font-size: 9px; font-weight: 500; }
+    .layer-number { fill: #111111; }
+    .layer-number-text { fill: #ffffff; font-size: 9px; font-weight: 500; }
+    .layer-ground { fill: #d7dade; stroke: none; }
+    .layer-anchor-pad { fill: #e5e7e9; fill-opacity: 0.86; stroke: #111111; stroke-width: 0.8; }
+    .layer-anchor-point { fill: #111111; }
+    .layer-door { fill: none; stroke: #00a84f; stroke-width: 1.55; }
+    .layer-door-divider { stroke-width: 0.9; stroke-dasharray: 2 2; }
+    .layer-door-direction { stroke-width: 1.35; }
+    .hide-emergency-doors .layer-emergency-doors { display: none; }
+    .layer-insulation { fill: #e7c85b; fill-opacity: 0.72; stroke: none; }
+    .layer-deck { fill: #b79869; stroke: none; }
+    .layer-wood, .layer-blocking { stroke: #85613d; stroke-width: 5; }
+    .layer-blocking { stroke-width: 3.4; }
+    .layer-mesh { stroke: #7e888e; stroke-width: 0.65; }
+    .layer-deck-line { stroke: #755a38; stroke-width: 0.75; }
+    .layer-outline { fill: none; stroke: #111111; stroke-width: 1.4; }
+    .layer-extension-divider { stroke: #111111; stroke-width: 1; stroke-dasharray: 5 4; }
+    .footer-main { font-size: 10px; font-weight: 500; }
+    .footer-small { font-size: 8px; }
+    @media print {
+      @page { size: A3 portrait; margin: 5mm; }
+      body { background: #ffffff; }
+      .sheet { width: 1000px; height: 1410px; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sheet hide-emergency-doors" width="1000" height="1410" viewBox="0 0 1000 1410" role="img" aria-labelledby="checkpoint-title checkpoint-desc">
+    <title id="checkpoint-title">SHELL 6 dimensions and labels checkpoint</title>
+    <desc id="checkpoint-desc">Cross-check page generated from the same building specification as the coordinated drawing, with dimensions, labels, foundation coordinates and three simplified top-down construction layer states.</desc>
+    <defs>
+      <marker id="checkpoint-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+      </marker>
+      <marker id="checkpoint-door-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="#00a84f" />
+      </marker>
+    </defs>
+    <rect x="0" y="0" width="1000" height="1410" fill="#ffffff" />
+    <rect class="sheet-border" x="20" y="18" width="960" height="1380" />
+    <text x="500" y="48" class="sheet-title" text-anchor="middle">SHELL 6 - DIMENSIONS AND LABELS / MAL OG BETEGNELSER</text>
+    <text x="500" y="68" class="section-note" text-anchor="middle">PAGE 2 - SPECIFICATION CROSS-CHECK / SPESIFIKASJONSKONTROLL</text>
+
+    <rect class="panel" x="35" y="84" width="565" height="184" />
+    <text x="48" y="102" class="section-title" >AUTHORITATIVE DIMENSIONS / HOVEDMAL</text>
+
+    <text x="48" y="128" class="row-label" >Closed-shell length / Lengde lukket del</text>
+    <text x="318" y="128" class="row-value" text-anchor="end">13 500 mm</text>
+    <line class="row-rule" x1="48" y1="136" x2="318" y2="136" />
+    <text x="48" y="153" class="row-label" >Overall width / Bredde</text>
+    <text x="318" y="153" class="row-value" text-anchor="end">12 000 mm</text>
+    <line class="row-rule" x1="48" y1="161" x2="318" y2="161" />
+    <text x="48" y="178" class="row-label" >Overall height / Hoyde</text>
+    <text x="318" y="178" class="row-value" text-anchor="end">10 500 mm</text>
+    <line class="row-rule" x1="48" y1="186" x2="318" y2="186" />
+    <text x="48" y="203" class="row-label" >Stations / A-rammer</text>
+    <text x="318" y="203" class="row-value" text-anchor="end">6</text>
+    <line class="row-rule" x1="48" y1="211" x2="318" y2="211" />
+    <text x="48" y="228" class="row-label" >Bays / Fag</text>
+    <text x="318" y="228" class="row-value" text-anchor="end">5</text>
+    <line class="row-rule" x1="48" y1="236" x2="318" y2="236" />
+
+    <rect class="panel" x="615" y="84" width="350" height="184" />
+    <text x="630" y="102" class="section-title" >AXES AND DOCUMENT / AKSER OG DOKUMENT</text>
+
+    <text x="630" y="126" class="row-label" >X</text>
+    <text x="940" y="126" class="row-value" text-anchor="end">Length / Lengde</text>
+    <line class="row-rule" x1="630" y1="134" x2="940" y2="134" />
+
+    <text x="630" y="151" class="row-label" >Y</text>
+    <text x="940" y="151" class="row-value" text-anchor="end">Width / Bredde</text>
+    <line class="row-rule" x1="630" y1="159" x2="940" y2="159" />
+
+    <text x="630" y="176" class="row-label" >Z</text>
+    <text x="940" y="176" class="row-value" text-anchor="end">Height / Hoyde</text>
+    <line class="row-rule" x1="630" y1="184" x2="940" y2="184" />
+
+    <text x="630" y="211" class="row-label" >Drawing / Tegning</text>
+    <text x="940" y="211" class="row-value" text-anchor="end">A1200-T</text>
+    <line class="row-rule" x1="630" y1="219" x2="940" y2="219" />
+
+    <text x="630" y="236" class="row-label" >Revision / Revisjon</text>
+    <text x="940" y="236" class="row-value" text-anchor="end">T2 - DRAFT / UTKAST</text>
+    <line class="row-rule" x1="630" y1="244" x2="940" y2="244" />
+
+    <rect class="panel" x="35" y="282" width="930" height="324" />
+    <text x="48" y="304" class="section-title" >FOUNDATION COORDINATE SCHEDULE / FORANKRINGSKOORDINATER</text>
+    <text x="952" y="304" class="section-note" text-anchor="end">Origin: closed-shell start gable, left rail, foundation level (0,0,0)</text>
+    <g class="anchor-column">
+      <text x="48" y="324" class="table-head" >ID</text>
+      <text x="116" y="324" class="table-head" >CENTER X</text>
+      <text x="203" y="324" class="table-head" >CENTER Y</text>
+      <text x="290" y="324" class="table-head" >CENTER Z</text>
+      <text x="368" y="324" class="table-head" >SIZE X/Y/Z</text>
+        <text x="48" y="352" class="table-id" >B1</text>
+        <text x="116" y="352" class="table-cell" >0 mm</text>
+        <text x="203" y="352" class="table-cell" >0 mm</text>
+        <text x="290" y="352" class="table-cell" >0 mm</text>
+        <text x="368" y="352" class="table-cell" >1250/1250/1000</text>
+        <line class="table-rule" x1="48" y1="362" x2="458" y2="362" />
+        <text x="48" y="386" class="table-id" >B3</text>
+        <text x="116" y="386" class="table-cell" >0 mm</text>
+        <text x="203" y="386" class="table-cell" >12 000 mm</text>
+        <text x="290" y="386" class="table-cell" >0 mm</text>
+        <text x="368" y="386" class="table-cell" >1250/1250/1000</text>
+        <line class="table-rule" x1="48" y1="396" x2="458" y2="396" />
+        <text x="48" y="420" class="table-id" >B2</text>
+        <text x="116" y="420" class="table-cell" >13 500 mm</text>
+        <text x="203" y="420" class="table-cell" >0 mm</text>
+        <text x="290" y="420" class="table-cell" >0 mm</text>
+        <text x="368" y="420" class="table-cell" >1250/1250/1000</text>
+        <line class="table-rule" x1="48" y1="430" x2="458" y2="430" />
+        <text x="48" y="454" class="table-id" >B4</text>
+        <text x="116" y="454" class="table-cell" >13 500 mm</text>
+        <text x="203" y="454" class="table-cell" >12 000 mm</text>
+        <text x="290" y="454" class="table-cell" >0 mm</text>
+        <text x="368" y="454" class="table-cell" >1250/1250/1000</text>
+        <line class="table-rule" x1="48" y1="464" x2="458" y2="464" /></g><g class="anchor-column">
+      <text x="510" y="324" class="table-head" >ID</text>
+      <text x="578" y="324" class="table-head" >CENTER X</text>
+      <text x="665" y="324" class="table-head" >CENTER Y</text>
+      <text x="752" y="324" class="table-head" >CENTER Z</text>
+      <text x="830" y="324" class="table-head" >SIZE X/Y/Z</text></g>
+    <text x="48" y="584" class="section-note" >Coordinates are anchor centres. Size order is X/Y/Z. Z=0 is foundation level; depth extends downward.</text>
+    <text x="952" y="584" class="section-note" text-anchor="end">Concrete anchor count / Antall betongankre: 4</text>
+
+    <rect class="panel" x="35" y="620" width="930" height="180" />
+    <text x="48" y="646" class="section-title" >LABELS AND STRUCTURAL CONVENTIONS / BETEGNELSER OG KONVENSJONER</text>
+    <text x="48" y="674" class="legend-line" >4 end-gable door sets / 4 gavldorsett</text><text x="48" y="698" class="legend-line" >No long-side exterior door / Ingen utvendig langsidedor</text><text x="48" y="722" class="legend-line" >No internal door pair / Ingen innvendig dorpar</text><text x="48" y="746" class="legend-green" >Emergency-door overlay is optional and off in this issue / Nodutgangslag er valgfritt og avslatt</text>
+    <text x="520" y="674" class="legend-line" >Black dots: structural joints / Sorte prikker: knutepunkter</text>
+    <text x="520" y="698" class="legend-line" >Grey blocks: concrete anchors / Gra blokker: betongankre</text>
+    <text x="520" y="722" class="legend-line" >4 defined wire elements; near wall solid, far wall dashed / nær vegg heltrukket, fjern vegg stiplet</text>
+    <text x="520" y="746" class="legend-line" >Near/far, solid/dashed and door IDs match page 1 / Symbolbruk og ID-er samsvarer med side 1</text>
+    <text x="520" y="770" class="section-note" >All reconstructed dimensions remain provisional until verified on site.</text>
+
+
+    <g id="top-down-layer-states" aria-label="Three simplified top-down construction layer states">
+      <rect class="layer-field" x="48" y="820" width="904" height="500" />
+      <text x="64" y="846" class="section-title" >TOP-DOWN LAYER STATES / LAGVIS OVERSIKT</text>
+      <text x="936" y="846" class="layer-field-note" text-anchor="end">ANCHORS SHOWN / FORANKRINGER VIST - DOOR LAYER OPTIONAL</text>
+
+    <g class="layer-state" data-layer-state="structure-mesh" data-layer-kind="mesh">
+      <defs><clipPath id="layer-clip-shell6-1"><rect x="99" y="977.375" width="202" height="227.25" /></clipPath></defs>
+      <rect class="layer-window" x="64" y="870" width="272" height="405" />
+      <circle class="layer-number" cx="86" cy="894" r="13" />
+      <text x="86" y="898" class="layer-number-text" text-anchor="middle">1</text>
+      <text x="108" y="892" class="layer-title" >BJELKELAG + HØNSENETTING</text>
+      <text x="108" y="908" class="layer-subtitle" >JOISTS + CHICKEN WIRE</text>
+      <rect class="layer-ground" x="99" y="977.375" width="202" height="227.25" />
+      <g clip-path="url(#layer-clip-shell6-1)"><line class="layer-mesh" x1="-195" y1="977.375" x2="-489" y2="1271.375" /><line class="layer-mesh" x1="-195" y1="977.375" x2="99" y2="1271.375" /><line class="layer-mesh" x1="-182" y1="977.375" x2="-476" y2="1271.375" /><line class="layer-mesh" x1="-182" y1="977.375" x2="112" y2="1271.375" /><line class="layer-mesh" x1="-169" y1="977.375" x2="-463" y2="1271.375" /><line class="layer-mesh" x1="-169" y1="977.375" x2="125" y2="1271.375" /><line class="layer-mesh" x1="-156" y1="977.375" x2="-450" y2="1271.375" /><line class="layer-mesh" x1="-156" y1="977.375" x2="138" y2="1271.375" /><line class="layer-mesh" x1="-143" y1="977.375" x2="-437" y2="1271.375" /><line class="layer-mesh" x1="-143" y1="977.375" x2="151" y2="1271.375" /><line class="layer-mesh" x1="-130" y1="977.375" x2="-424" y2="1271.375" /><line class="layer-mesh" x1="-130" y1="977.375" x2="164" y2="1271.375" /><line class="layer-mesh" x1="-117" y1="977.375" x2="-411" y2="1271.375" /><line class="layer-mesh" x1="-117" y1="977.375" x2="177" y2="1271.375" /><line class="layer-mesh" x1="-104" y1="977.375" x2="-398" y2="1271.375" /><line class="layer-mesh" x1="-104" y1="977.375" x2="190" y2="1271.375" /><line class="layer-mesh" x1="-91" y1="977.375" x2="-385" y2="1271.375" /><line class="layer-mesh" x1="-91" y1="977.375" x2="203" y2="1271.375" /><line class="layer-mesh" x1="-78" y1="977.375" x2="-372" y2="1271.375" /><line class="layer-mesh" x1="-78" y1="977.375" x2="216" y2="1271.375" /><line class="layer-mesh" x1="-65" y1="977.375" x2="-359" y2="1271.375" /><line class="layer-mesh" x1="-65" y1="977.375" x2="229" y2="1271.375" /><line class="layer-mesh" x1="-52" y1="977.375" x2="-346" y2="1271.375" /><line class="layer-mesh" x1="-52" y1="977.375" x2="242" y2="1271.375" /><line class="layer-mesh" x1="-39" y1="977.375" x2="-333" y2="1271.375" /><line class="layer-mesh" x1="-39" y1="977.375" x2="255" y2="1271.375" /><line class="layer-mesh" x1="-26" y1="977.375" x2="-320" y2="1271.375" /><line class="layer-mesh" x1="-26" y1="977.375" x2="268" y2="1271.375" /><line class="layer-mesh" x1="-13" y1="977.375" x2="-307" y2="1271.375" /><line class="layer-mesh" x1="-13" y1="977.375" x2="281" y2="1271.375" /><line class="layer-mesh" x1="0" y1="977.375" x2="-294" y2="1271.375" /><line class="layer-mesh" x1="0" y1="977.375" x2="294" y2="1271.375" /><line class="layer-mesh" x1="13" y1="977.375" x2="-281" y2="1271.375" /><line class="layer-mesh" x1="13" y1="977.375" x2="307" y2="1271.375" /><line class="layer-mesh" x1="26" y1="977.375" x2="-268" y2="1271.375" /><line class="layer-mesh" x1="26" y1="977.375" x2="320" y2="1271.375" /><line class="layer-mesh" x1="39" y1="977.375" x2="-255" y2="1271.375" /><line class="layer-mesh" x1="39" y1="977.375" x2="333" y2="1271.375" /><line class="layer-mesh" x1="52" y1="977.375" x2="-242" y2="1271.375" /><line class="layer-mesh" x1="52" y1="977.375" x2="346" y2="1271.375" /><line class="layer-mesh" x1="65" y1="977.375" x2="-229" y2="1271.375" /><line class="layer-mesh" x1="65" y1="977.375" x2="359" y2="1271.375" /><line class="layer-mesh" x1="78" y1="977.375" x2="-216" y2="1271.375" /><line class="layer-mesh" x1="78" y1="977.375" x2="372" y2="1271.375" /><line class="layer-mesh" x1="91" y1="977.375" x2="-203" y2="1271.375" /><line class="layer-mesh" x1="91" y1="977.375" x2="385" y2="1271.375" /><line class="layer-mesh" x1="104" y1="977.375" x2="-190" y2="1271.375" /><line class="layer-mesh" x1="104" y1="977.375" x2="398" y2="1271.375" /><line class="layer-mesh" x1="117" y1="977.375" x2="-177" y2="1271.375" /><line class="layer-mesh" x1="117" y1="977.375" x2="411" y2="1271.375" /><line class="layer-mesh" x1="130" y1="977.375" x2="-164" y2="1271.375" /><line class="layer-mesh" x1="130" y1="977.375" x2="424" y2="1271.375" /><line class="layer-mesh" x1="143" y1="977.375" x2="-151" y2="1271.375" /><line class="layer-mesh" x1="143" y1="977.375" x2="437" y2="1271.375" /><line class="layer-mesh" x1="156" y1="977.375" x2="-138" y2="1271.375" /><line class="layer-mesh" x1="156" y1="977.375" x2="450" y2="1271.375" /><line class="layer-mesh" x1="169" y1="977.375" x2="-125" y2="1271.375" /><line class="layer-mesh" x1="169" y1="977.375" x2="463" y2="1271.375" /><line class="layer-mesh" x1="182" y1="977.375" x2="-112" y2="1271.375" /><line class="layer-mesh" x1="182" y1="977.375" x2="476" y2="1271.375" /><line class="layer-mesh" x1="195" y1="977.375" x2="-99" y2="1271.375" /><line class="layer-mesh" x1="195" y1="977.375" x2="489" y2="1271.375" /><line class="layer-mesh" x1="208" y1="977.375" x2="-86" y2="1271.375" /><line class="layer-mesh" x1="208" y1="977.375" x2="502" y2="1271.375" /><line class="layer-mesh" x1="221" y1="977.375" x2="-73" y2="1271.375" /><line class="layer-mesh" x1="221" y1="977.375" x2="515" y2="1271.375" /><line class="layer-mesh" x1="234" y1="977.375" x2="-60" y2="1271.375" /><line class="layer-mesh" x1="234" y1="977.375" x2="528" y2="1271.375" /><line class="layer-mesh" x1="247" y1="977.375" x2="-47" y2="1271.375" /><line class="layer-mesh" x1="247" y1="977.375" x2="541" y2="1271.375" /><line class="layer-mesh" x1="260" y1="977.375" x2="-34" y2="1271.375" /><line class="layer-mesh" x1="260" y1="977.375" x2="554" y2="1271.375" /><line class="layer-mesh" x1="273" y1="977.375" x2="-21" y2="1271.375" /><line class="layer-mesh" x1="273" y1="977.375" x2="567" y2="1271.375" /><line class="layer-mesh" x1="286" y1="977.375" x2="-8" y2="1271.375" /><line class="layer-mesh" x1="286" y1="977.375" x2="580" y2="1271.375" /><line class="layer-mesh" x1="299" y1="977.375" x2="5" y2="1271.375" /><line class="layer-mesh" x1="299" y1="977.375" x2="593" y2="1271.375" /><line class="layer-mesh" x1="312" y1="977.375" x2="18" y2="1271.375" /><line class="layer-mesh" x1="312" y1="977.375" x2="606" y2="1271.375" /><line class="layer-mesh" x1="325" y1="977.375" x2="31" y2="1271.375" /><line class="layer-mesh" x1="325" y1="977.375" x2="619" y2="1271.375" /><line class="layer-mesh" x1="338" y1="977.375" x2="44" y2="1271.375" /><line class="layer-mesh" x1="338" y1="977.375" x2="632" y2="1271.375" /><line class="layer-mesh" x1="351" y1="977.375" x2="57" y2="1271.375" /><line class="layer-mesh" x1="351" y1="977.375" x2="645" y2="1271.375" /><line class="layer-mesh" x1="364" y1="977.375" x2="70" y2="1271.375" /><line class="layer-mesh" x1="364" y1="977.375" x2="658" y2="1271.375" /><line class="layer-mesh" x1="377" y1="977.375" x2="83" y2="1271.375" /><line class="layer-mesh" x1="377" y1="977.375" x2="671" y2="1271.375" /><line class="layer-mesh" x1="390" y1="977.375" x2="96" y2="1271.375" /><line class="layer-mesh" x1="390" y1="977.375" x2="684" y2="1271.375" /><line class="layer-mesh" x1="403" y1="977.375" x2="109" y2="1271.375" /><line class="layer-mesh" x1="403" y1="977.375" x2="697" y2="1271.375" /><line class="layer-mesh" x1="416" y1="977.375" x2="122" y2="1271.375" /><line class="layer-mesh" x1="416" y1="977.375" x2="710" y2="1271.375" /><line class="layer-mesh" x1="429" y1="977.375" x2="135" y2="1271.375" /><line class="layer-mesh" x1="429" y1="977.375" x2="723" y2="1271.375" /><line class="layer-mesh" x1="442" y1="977.375" x2="148" y2="1271.375" /><line class="layer-mesh" x1="442" y1="977.375" x2="736" y2="1271.375" /><line class="layer-mesh" x1="455" y1="977.375" x2="161" y2="1271.375" /><line class="layer-mesh" x1="455" y1="977.375" x2="749" y2="1271.375" /><line class="layer-mesh" x1="468" y1="977.375" x2="174" y2="1271.375" /><line class="layer-mesh" x1="468" y1="977.375" x2="762" y2="1271.375" /><line class="layer-mesh" x1="481" y1="977.375" x2="187" y2="1271.375" /><line class="layer-mesh" x1="481" y1="977.375" x2="775" y2="1271.375" /><line class="layer-mesh" x1="494" y1="977.375" x2="200" y2="1271.375" /><line class="layer-mesh" x1="494" y1="977.375" x2="788" y2="1271.375" /><line class="layer-mesh" x1="507" y1="977.375" x2="213" y2="1271.375" /><line class="layer-mesh" x1="507" y1="977.375" x2="801" y2="1271.375" /><line class="layer-mesh" x1="520" y1="977.375" x2="226" y2="1271.375" /><line class="layer-mesh" x1="520" y1="977.375" x2="814" y2="1271.375" /><line class="layer-mesh" x1="533" y1="977.375" x2="239" y2="1271.375" /><line class="layer-mesh" x1="533" y1="977.375" x2="827" y2="1271.375" /><line class="layer-mesh" x1="546" y1="977.375" x2="252" y2="1271.375" /><line class="layer-mesh" x1="546" y1="977.375" x2="840" y2="1271.375" /><line class="layer-mesh" x1="559" y1="977.375" x2="265" y2="1271.375" /><line class="layer-mesh" x1="559" y1="977.375" x2="853" y2="1271.375" /><line class="layer-mesh" x1="572" y1="977.375" x2="278" y2="1271.375" /><line class="layer-mesh" x1="572" y1="977.375" x2="866" y2="1271.375" /><line class="layer-mesh" x1="585" y1="977.375" x2="291" y2="1271.375" /><line class="layer-mesh" x1="585" y1="977.375" x2="879" y2="1271.375" /></g><line class="layer-wood" x1="99" y1="977.375" x2="99" y2="1204.625" /><line class="layer-wood" x1="139.4" y1="977.375" x2="139.4" y2="1204.625" /><line class="layer-wood" x1="179.8" y1="977.375" x2="179.8" y2="1204.625" /><line class="layer-wood" x1="220.2" y1="977.375" x2="220.2" y2="1204.625" /><line class="layer-wood" x1="260.6" y1="977.375" x2="260.6" y2="1204.625" /><line class="layer-wood" x1="301" y1="977.375" x2="301" y2="1204.625" /><line class="layer-blocking" x1="99" y1="1022.825" x2="301" y2="1022.825" /><line class="layer-blocking" x1="99" y1="1068.275" x2="301" y2="1068.275" /><line class="layer-blocking" x1="99" y1="1113.725" x2="301" y2="1113.725" /><line class="layer-blocking" x1="99" y1="1159.175" x2="301" y2="1159.175" />
+
+      <g class="layer-anchor" data-layer-anchor="B1">
+        <rect class="layer-anchor-pad" x="88.47916666666667" y="966.8541666666666" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="99" cy="977.375" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B3">
+        <rect class="layer-anchor-pad" x="290.4791666666667" y="966.8541666666666" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="301" cy="977.375" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B2">
+        <rect class="layer-anchor-pad" x="88.47916666666667" y="1194.1041666666667" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="99" cy="1204.625" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B4">
+        <rect class="layer-anchor-pad" x="290.4791666666667" y="1194.1041666666667" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="301" cy="1204.625" r="2.5" />
+      </g>
+
+      <rect class="layer-outline" x="99" y="977.375" width="202" height="227.25" />
+
+    </g>
+    <g class="layer-state" data-layer-state="blocking-insulation" data-layer-kind="insulation">
+      <defs><clipPath id="layer-clip-shell6-2"><rect x="393" y="977.375" width="202" height="227.25" /></clipPath></defs>
+      <rect class="layer-window" x="358" y="870" width="272" height="405" />
+      <circle class="layer-number" cx="380" cy="894" r="13" />
+      <text x="380" y="898" class="layer-number-text" text-anchor="middle">2</text>
+      <text x="402" y="892" class="layer-title" >KUBBING + ISOLASJON</text>
+      <text x="402" y="908" class="layer-subtitle" >BLOCKING + INSULATION</text>
+      <rect class="layer-ground" x="393" y="977.375" width="202" height="227.25" />
+      <rect class="layer-insulation" x="393" y="977.375" width="202" height="227.25" /><line class="layer-wood" x1="393" y1="977.375" x2="393" y2="1204.625" /><line class="layer-wood" x1="433.4" y1="977.375" x2="433.4" y2="1204.625" /><line class="layer-wood" x1="473.8" y1="977.375" x2="473.8" y2="1204.625" /><line class="layer-wood" x1="514.2" y1="977.375" x2="514.2" y2="1204.625" /><line class="layer-wood" x1="554.6" y1="977.375" x2="554.6" y2="1204.625" /><line class="layer-wood" x1="595" y1="977.375" x2="595" y2="1204.625" /><line class="layer-blocking" x1="393" y1="1022.825" x2="595" y2="1022.825" /><line class="layer-blocking" x1="393" y1="1068.275" x2="595" y2="1068.275" /><line class="layer-blocking" x1="393" y1="1113.725" x2="595" y2="1113.725" /><line class="layer-blocking" x1="393" y1="1159.175" x2="595" y2="1159.175" />
+
+      <g class="layer-anchor" data-layer-anchor="B1">
+        <rect class="layer-anchor-pad" x="382.4791666666667" y="966.8541666666666" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="393" cy="977.375" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B3">
+        <rect class="layer-anchor-pad" x="584.4791666666666" y="966.8541666666666" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="595" cy="977.375" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B2">
+        <rect class="layer-anchor-pad" x="382.4791666666667" y="1194.1041666666667" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="393" cy="1204.625" r="2.5" />
+      </g>
+      <g class="layer-anchor" data-layer-anchor="B4">
+        <rect class="layer-anchor-pad" x="584.4791666666666" y="1194.1041666666667" width="21.041666666666668" height="21.041666666666664" />
+        <circle class="layer-anchor-point" cx="595" cy="1204.625" r="2.5" />
+      </g>
+
+      <rect class="layer-outline" x="393" y="977.375" width="202" height="227.25" />
+
+    </g>
+    <g class="layer-state" data-layer-state="floor-layer" data-layer-kind="deck">
+      <defs><clipPath id="layer-clip-shell6-3"><rect x="687" y="977.375" width="202" height="227.25" /></clipPath></defs>
+      <rect class="layer-window" x="652" y="870" width="272" height="405" />
+      <circle class="layer-number" cx="674" cy="894" r="13" />
+      <text x="674" y="898" class="layer-number-text" text-anchor="middle">3</text>
+      <text x="696" y="892" class="layer-title" >TOPPDEKKE / FLOOR LAYER</text>
+      <text x="696" y="908" class="layer-subtitle" >FERDIG GULVLAG / FINISHED DECK</text>
+      <rect class="layer-ground" x="687" y="977.375" width="202" height="227.25" />
+      <rect class="layer-deck" x="687" y="977.375" width="202" height="227.25" /><line class="layer-deck-line" x1="687" y1="985.375" x2="889" y2="985.375" /><line class="layer-deck-line" x1="687" y1="995.375" x2="889" y2="995.375" /><line class="layer-deck-line" x1="687" y1="1005.375" x2="889" y2="1005.375" /><line class="layer-deck-line" x1="687" y1="1015.375" x2="889" y2="1015.375" /><line class="layer-deck-line" x1="687" y1="1025.375" x2="889" y2="1025.375" /><line class="layer-deck-line" x1="687" y1="1035.375" x2="889" y2="1035.375" /><line class="layer-deck-line" x1="687" y1="1045.375" x2="889" y2="1045.375" /><line class="layer-deck-line" x1="687" y1="1055.375" x2="889" y2="1055.375" /><line class="layer-deck-line" x1="687" y1="1065.375" x2="889" y2="1065.375" /><line class="layer-deck-line" x1="687" y1="1075.375" x2="889" y2="1075.375" /><line class="layer-deck-line" x1="687" y1="1085.375" x2="889" y2="1085.375" /><line class="layer-deck-line" x1="687" y1="1095.375" x2="889" y2="1095.375" /><line class="layer-deck-line" x1="687" y1="1105.375" x2="889" y2="1105.375" /><line class="layer-deck-line" x1="687" y1="1115.375" x2="889" y2="1115.375" /><line class="layer-deck-line" x1="687" y1="1125.375" x2="889" y2="1125.375" /><line class="layer-deck-line" x1="687" y1="1135.375" x2="889" y2="1135.375" /><line class="layer-deck-line" x1="687" y1="1145.375" x2="889" y2="1145.375" /><line class="layer-deck-line" x1="687" y1="1155.375" x2="889" y2="1155.375" /><line class="layer-deck-line" x1="687" y1="1165.375" x2="889" y2="1165.375" /><line class="layer-deck-line" x1="687" y1="1175.375" x2="889" y2="1175.375" /><line class="layer-deck-line" x1="687" y1="1185.375" x2="889" y2="1185.375" /><line class="layer-deck-line" x1="687" y1="1195.375" x2="889" y2="1195.375" />
+
+
+      <rect class="layer-outline" x="687" y="977.375" width="202" height="227.25" />
+      <g class="layer-emergency-doors" aria-label="Emergency-door locations and opening directions">
+      <g class="layer-door" data-layer-door-set="start-1" data-door-location="gable">
+        <line class="layer-door-direction" x1="727.4" y1="977.375" x2="727.4" y2="959.375" marker-end="url(#checkpoint-door-arrow)" />
+        <path d="M 727.4 959.375 Q 708.2099999999999 959.375 708.2099999999999 977.375" />
+        <path d="M 727.4 959.375 Q 746.59 959.375 746.59 977.375" />
+        <line class="layer-door-divider" x1="727.4" y1="974.375" x2="727.4" y2="980.375" />
+      </g>
+      <g class="layer-door" data-layer-door-set="start-2" data-door-location="gable">
+        <line class="layer-door-direction" x1="848.6" y1="977.375" x2="848.6" y2="959.375" marker-end="url(#checkpoint-door-arrow)" />
+        <path d="M 848.6 959.375 Q 829.41 959.375 829.41 977.375" />
+        <path d="M 848.6 959.375 Q 867.7900000000001 959.375 867.7900000000001 977.375" />
+        <line class="layer-door-divider" x1="848.6" y1="974.375" x2="848.6" y2="980.375" />
+      </g>
+      <g class="layer-door" data-layer-door-set="end-1" data-door-location="gable">
+        <line class="layer-door-direction" x1="727.4" y1="1204.625" x2="727.4" y2="1222.625" marker-end="url(#checkpoint-door-arrow)" />
+        <path d="M 727.4 1222.625 Q 708.2099999999999 1222.625 708.2099999999999 1204.625" />
+        <path d="M 727.4 1222.625 Q 746.59 1222.625 746.59 1204.625" />
+        <line class="layer-door-divider" x1="727.4" y1="1201.625" x2="727.4" y2="1207.625" />
+      </g>
+      <g class="layer-door" data-layer-door-set="end-2" data-door-location="gable">
+        <line class="layer-door-direction" x1="848.6" y1="1204.625" x2="848.6" y2="1222.625" marker-end="url(#checkpoint-door-arrow)" />
+        <path d="M 848.6 1222.625 Q 829.41 1222.625 829.41 1204.625" />
+        <path d="M 848.6 1222.625 Q 867.7900000000001 1222.625 867.7900000000001 1204.625" />
+        <line class="layer-door-divider" x1="848.6" y1="1201.625" x2="848.6" y2="1207.625" />
+      </g></g>
+    </g>
+      <text x="52" y="1085" class="map-axis-label" transform="rotate(-90 52 1085)" text-anchor="middle">X - LENGTH / LENGDE</text>
+      <text x="500" y="1308" class="map-axis-label" text-anchor="middle">Y - WIDTH / BREDDE</text>
+    </g>
+
+    <g class="footer">
+      <rect x="35" y="1340" width="930" height="46" />
+      <line x1="390" y1="1340" x2="390" y2="1386" />
+      <line x1="720" y1="1340" x2="720" y2="1386" />
+      <line x1="855" y1="1340" x2="855" y2="1386" />
+      <text x="48" y="1359" class="footer-main" >SHELL 6 - DIMENSIONS / LABELS</text>
+      <text x="48" y="1377" class="footer-small" >PAGE 2 OF 2 / SIDE 2 AV 2</text>
+      <text x="405" y="1359" class="footer-small" >SAME SPECIFICATION SOURCE AS PAGE 1</text>
+      <text x="405" y="1377" class="footer-small" >CROSS-CHECK BEFORE ISSUE / KONTROLLER FOR UTGIVELSE</text>
+      <text x="735" y="1359" class="footer-small" >SCALE / MALESTOKK</text>
+      <text x="735" y="1377" class="footer-small" >SCHEDULE: NTS</text>
+      <text x="870" y="1359" class="footer-small" >DRAWING / TEGNING</text>
+      <text x="870" y="1377" class="footer-small" >A1200-T - T2</text>
+    </g>
+  </svg>
+</body>
+</html>

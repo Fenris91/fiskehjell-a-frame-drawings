@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plan HALL</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #d9dde0; font-family: Arial, Helvetica, sans-serif; }
+    .sheet { display: block; width: min(100%, 1000px); height: auto; margin: 0 auto; background: #ffffff; }
+    text { fill: #111111; font-size: 10px; font-weight: 400; }
+    .sheet-border, .title-block rect, .title-block line { fill: none; stroke: #111111; stroke-width: 1; }
+    .view-title, .sheet-title { font-size: 15px; font-weight: 500; }
+    .station-label, .anchor-label, .title-small, .provenance { font-size: 8px; }
+    .passage-label { font-size: 7px; font-weight: 500; }
+    .title-main { font-size: 11px; font-weight: 500; }
+    .dimension { fill: none; stroke: #111111; stroke-width: 0.8; }
+    .dimension-text { font-size: 9px; stroke: none; }
+    .axis-label { font-size: 9px; }
+    .axis-letter { font-size: 11px; font-weight: 500; }
+    .wall-fill, .gable-fill, .axon-wall { fill: #eef1f3; stroke: #111111; stroke-width: 1.2; }
+    .structure-heavy { fill: none; stroke: #111111; stroke-width: 4; stroke-linecap: square; }
+    .station-line, .axon-frame { fill: none; stroke: #111111; stroke-width: 1.2; }
+    .extension-frame { stroke-width: 2; }
+    .concrete { fill: #e5e7e9; stroke: #111111; stroke-width: 0.8; }
+    .concrete-rail { fill: #e5e7e9; stroke: #111111; stroke-width: 0.8; }
+    .extension-concrete { fill: #e5e7e9; stroke: #111111; stroke-width: 0.8; }
+    .anchor-point { fill: #111111; stroke: #111111; }
+    .anchor-point.apex { fill: #ffffff; stroke-width: 2; }
+    .door, .side-door, .internal-door-pair, .internal-section-door, .edge-door-indicators, .axon-door { fill: none; stroke: var(--door); stroke-width: 2; }
+    .door-divider { stroke: var(--door); stroke-width: 1.2; stroke-dasharray: 4 3; }
+    .canopy { fill: #ffffff; stroke: #111111; }
+    .far-door { stroke-dasharray: 5 4; }
+    .extension-footing { fill: none; stroke: #111111; stroke-width: 3; }
+    .wire-near { stroke: #8f979d; stroke-width: 2.5; }
+    .wire-far { fill: none; stroke: #b2b8bc; stroke-width: 1.7; stroke-dasharray: 7 5; }
+    .axis { fill: none; stroke: #111111; stroke-width: 1.5; }
+    .axis circle { fill: #111111; }
+    .axis-guide { stroke-width: 0.8; stroke-dasharray: 6 5; }
+    .graph-edge.graph-frame { stroke-width: 1.4; }
+    .graph-edge.graph-rail { stroke-width: 3; }
+    .graph-node-label { font-size: 10px; font-weight: 500; }
+    .graph-end-door, .graph-side-door, .graph-internal-door, .graph-door-swing, .graph-door-divider { fill: none; stroke: var(--door); stroke-width: 1.8; }
+    .graph-door-divider { stroke-width: 1.1; stroke-dasharray: 3 2; }
+    .graph-door-direction { fill: none; stroke: var(--door); stroke-width: 1.8; }
+    .hide-emergency-doors .door,
+    .hide-emergency-doors .side-door,
+    .hide-emergency-doors .internal-door-pair,
+    .hide-emergency-doors .internal-section-door,
+    .hide-emergency-doors .edge-door-indicators,
+    .hide-emergency-doors .axon-door,
+    .hide-emergency-doors .graph-end-doors,
+    .hide-emergency-doors .graph-internal-doors,
+    .hide-emergency-doors .graph-door-swings,
+    .hide-emergency-doors .graph-door-arrows,
+    .hide-emergency-doors .graph-side-doors { display: none; }
+    .title-block { fill: none; stroke: #111111; }
+    @media print {
+      @page { size: A3 portrait; margin: 5mm; }
+      body { background: #ffffff; }
+      .sheet { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sheet hide-emergency-doors" viewBox="0 0 1000 1410" role="img" aria-labelledby="sheet-title sheet-desc">
+    <title id="sheet-title">HALL - PLAN OG FASADER</title>
+    <desc id="sheet-desc">Coordinated top-down, A-frame, side and three-dimensional views generated from one shared building specification.</desc>
+    <defs>
+      <marker id="door-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="#00a84f" />
+      </marker>
+      <marker id="axis-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="#111111" />
+      </marker>
+    </defs>
+    <rect class="sheet-border" x="20" y="18" width="960" height="1380" />
+    <text x="500" y="42" class="sheet-title" text-anchor="middle">PLAN HALL</text>
+
+  <g id="top-down-view" aria-label="Top-down plan">
+    <text x="242" y="58" class="view-title" text-anchor="middle">TOP DOWN / OVERSIKTSBILDE</text>
+    <rect class="wall-fill" x="125" y="95" width="235" height="500" />
+    <rect class="concrete-rail concrete-rail-plan" x="121" y="95" width="8" height="500" />
+    <rect class="concrete-rail concrete-rail-plan" x="356" y="95" width="8" height="500" />
+    <line class="structure-heavy" x1="125" y1="95" x2="125" y2="595" />
+    <line class="structure-heavy" x1="360" y1="95" x2="360" y2="595" />
+    <line class="structure-heavy" x1="242.5" y1="95" x2="242.5" y2="715" />
+    <line class="structure-heavy" x1="125" y1="95" x2="360" y2="95" />
+    <line class="structure-heavy" x1="125" y1="595" x2="360" y2="595" />
+
+    <line class="station-line" x1="125" y1="95" x2="360" y2="95" />
+    <text x="107" y="99" class="station-label" text-anchor="end">1</text>
+    <line class="station-line" x1="125" y1="136.67" x2="360" y2="136.67" />
+    <text x="107" y="140.67" class="station-label" text-anchor="end">2</text>
+    <line class="station-line" x1="125" y1="178.33" x2="360" y2="178.33" />
+    <text x="107" y="182.33" class="station-label" text-anchor="end">3</text>
+    <line class="station-line" x1="125" y1="220" x2="360" y2="220" />
+    <text x="107" y="224" class="station-label" text-anchor="end">4</text>
+    <line class="station-line" x1="125" y1="261.67" x2="360" y2="261.67" />
+    <text x="107" y="265.67" class="station-label" text-anchor="end">5</text>
+    <line class="station-line" x1="125" y1="303.33" x2="360" y2="303.33" />
+    <text x="107" y="307.33" class="station-label" text-anchor="end">6</text>
+    <line class="station-line" x1="125" y1="345" x2="360" y2="345" />
+    <text x="107" y="349" class="station-label" text-anchor="end">7</text>
+    <line class="station-line" x1="125" y1="386.67" x2="360" y2="386.67" />
+    <text x="107" y="390.67" class="station-label" text-anchor="end">8</text>
+    <line class="station-line" x1="125" y1="428.33" x2="360" y2="428.33" />
+    <text x="107" y="432.33" class="station-label" text-anchor="end">9</text>
+    <line class="station-line" x1="125" y1="470" x2="360" y2="470" />
+    <text x="107" y="474" class="station-label" text-anchor="end">10</text>
+    <line class="station-line" x1="125" y1="511.67" x2="360" y2="511.67" />
+    <text x="107" y="515.67" class="station-label" text-anchor="end">11</text>
+    <line class="station-line" x1="125" y1="553.33" x2="360" y2="553.33" />
+    <text x="107" y="557.33" class="station-label" text-anchor="end">12</text>
+    <line class="station-line" x1="125" y1="595" x2="360" y2="595" />
+    <text x="107" y="599" class="station-label" text-anchor="end">13</text>
+
+      <rect class="concrete plan-anchor-pad" data-anchor="B1" data-center-x-mm="0" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="82" width="28" height="26" />
+      <rect class="concrete plan-anchor-pad" data-anchor="B5" data-center-x-mm="0" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="82" width="28" height="26" />
+      <circle class="anchor-point" cx="125" cy="95" r="5" />
+      <circle class="anchor-point" cx="360" cy="95" r="5" />
+      <text x="95" y="99" class="anchor-label" text-anchor="end">B1</text>
+      <text x="390" y="99" class="anchor-label" >B5</text>
+      <rect class="concrete plan-anchor-pad" data-anchor="B2" data-center-x-mm="9000" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="248.67" width="28" height="26" />
+      <rect class="concrete plan-anchor-pad" data-anchor="B6" data-center-x-mm="9000" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="248.67" width="28" height="26" />
+      <circle class="anchor-point" cx="125" cy="261.67" r="5" />
+      <circle class="anchor-point" cx="360" cy="261.67" r="5" />
+      <text x="95" y="265.67" class="anchor-label" text-anchor="end">B2</text>
+      <text x="390" y="265.67" class="anchor-label" >B6</text>
+      <rect class="concrete plan-anchor-pad" data-anchor="B3" data-center-x-mm="18000" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="415.33" width="28" height="26" />
+      <rect class="concrete plan-anchor-pad" data-anchor="B7" data-center-x-mm="18000" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="415.33" width="28" height="26" />
+      <circle class="anchor-point" cx="125" cy="428.33" r="5" />
+      <circle class="anchor-point" cx="360" cy="428.33" r="5" />
+      <text x="95" y="432.33" class="anchor-label" text-anchor="end">B3</text>
+      <text x="390" y="432.33" class="anchor-label" >B7</text>
+      <rect class="concrete plan-anchor-pad" data-anchor="B4" data-center-x-mm="27000" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="582" width="28" height="26" />
+      <rect class="concrete plan-anchor-pad" data-anchor="B8" data-center-x-mm="27000" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="582" width="28" height="26" />
+      <circle class="anchor-point" cx="125" cy="595" r="5" />
+      <circle class="anchor-point" cx="360" cy="595" r="5" />
+      <text x="95" y="599" class="anchor-label" text-anchor="end">B4</text>
+      <text x="390" y="599" class="anchor-label" >B8</text>
+
+      <g class="door double-leaf-door" style="--door:#00a84f">
+        <line class="door-swing-direction" x1="172" y1="95" x2="172" y2="63" marker-end="url(#door-arrow)" />
+        <path d="M 172 63 Q 147.325 63 147.325 95" />
+        <path d="M 172 63 Q 196.675 63 196.675 95" />
+        <line class="door-divider" x1="172" y1="90" x2="172" y2="100" />
+      </g>
+      <g class="door double-leaf-door" style="--door:#00a84f">
+        <line class="door-swing-direction" x1="313" y1="95" x2="313" y2="63" marker-end="url(#door-arrow)" />
+        <path d="M 313 63 Q 288.325 63 288.325 95" />
+        <path d="M 313 63 Q 337.675 63 337.675 95" />
+        <line class="door-divider" x1="313" y1="90" x2="313" y2="100" />
+      </g>
+
+      <g class="door double-leaf-door" style="--door:#00a84f">
+        <line class="door-swing-direction" x1="172" y1="595" x2="172" y2="627" marker-end="url(#door-arrow)" />
+        <path d="M 172 627 Q 147.325 627 147.325 595" />
+        <path d="M 172 627 Q 196.675 627 196.675 595" />
+        <line class="door-divider" x1="172" y1="590" x2="172" y2="600" />
+      </g>
+      <g class="door double-leaf-door" style="--door:#00a84f">
+        <line class="door-swing-direction" x1="313" y1="595" x2="313" y2="627" marker-end="url(#door-arrow)" />
+        <path d="M 313 627 Q 288.325 627 288.325 595" />
+        <path d="M 313 627 Q 337.675 627 337.675 595" />
+        <line class="door-divider" x1="313" y1="590" x2="313" y2="600" />
+      </g>
+
+    <g class="side-door double-leaf-door" style="--door:#00a84f">
+      <line class="door-swing-direction" x1="125" y1="365" x2="93" y2="365" marker-end="url(#door-arrow)" />
+      <path d="M 93 365 Q 93 345 125 345" />
+      <path d="M 93 365 Q 93 385 125 385" />
+      <line class="door-divider" x1="120" y1="365" x2="130" y2="365" />
+    </g>
+    <g class="side-door double-leaf-door" style="--door:#00a84f">
+      <line class="door-swing-direction" x1="360" y1="365" x2="392" y2="365" marker-end="url(#door-arrow)" />
+      <path d="M 392 365 Q 392 345 360 345" />
+      <path d="M 392 365 Q 392 385 360 385" />
+      <line class="door-divider" x1="355" y1="365" x2="365" y2="365" />
+    </g>
+
+
+    <g class="extension">
+      <rect class="concrete-rail extension-connector-plan" data-side="left" x="121" y="643" width="8" height="72" />
+      <rect class="concrete-rail extension-connector-plan" data-side="right" x="356" y="643" width="8" height="72" />
+      <rect class="concrete extension-anchor-pad" data-anchor="L1-INNER" data-center-x-mm="31000" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="630" width="28" height="26" />
+      <rect class="concrete extension-anchor-pad" data-anchor="L2-INNER" data-center-x-mm="31000" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="630" width="28" height="26" />
+      <rect class="concrete extension-anchor-pad" data-anchor="L1-OUTER" data-center-x-mm="37000" data-center-y-mm="0" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="111" y="702" width="28" height="26" />
+      <rect class="concrete extension-anchor-pad" data-anchor="L2-OUTER" data-center-x-mm="37000" data-center-y-mm="12000" data-size-x-mm="1450" data-size-y-mm="1450" data-depth-mm="1000" x="346" y="702" width="28" height="26" />
+      <line class="structure-heavy" x1="125" y1="595" x2="125" y2="715" />
+      <line class="structure-heavy clear-interface" x1="360" y1="643" x2="360" y2="715" />
+      <line class="structure-heavy" x1="242.5" y1="595" x2="242.5" y2="715" />
+
+        <line class="station-line" x1="125" y1="595" x2="360" y2="595" />
+
+        <line class="station-line" x1="125" y1="643" x2="360" y2="643" />
+        <text x="107" y="647" class="station-label" text-anchor="end">E1</text>
+        <line class="station-line" x1="125" y1="667" x2="360" y2="667" />
+        <text x="107" y="671" class="station-label" text-anchor="end">E2</text>
+        <line class="station-line" x1="125" y1="691" x2="360" y2="691" />
+        <text x="107" y="695" class="station-label" text-anchor="end">E3</text>
+        <line class="station-line" x1="125" y1="715" x2="360" y2="715" />
+        <text x="107" y="719" class="station-label" text-anchor="end">E4</text>
+      <circle class="anchor-point" cx="125" cy="715" r="5" />
+      <circle class="anchor-point" cx="360" cy="715" r="5" />
+      <circle class="anchor-point" cx="125" cy="643" r="5" />
+      <circle class="anchor-point" cx="360" cy="643" r="5" />
+      <text x="113" y="719" class="anchor-label" text-anchor="end">L1</text>
+      <text x="372" y="719" class="anchor-label" >L2</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="125" y1="745" x2="360" y2="745" />
+      <line x1="125" y1="737" x2="125" y2="753" />
+      <line x1="360" y1="737" x2="360" y2="753" />
+      <text x="242.5" y="739" class="dimension-text" text-anchor="middle">12 000 mm Y - ANCHOR C/L</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="83" y1="95" x2="83" y2="261.66666666666663" />
+      <line x1="75" y1="95" x2="91" y2="95" />
+      <line x1="75" y1="261.66666666666663" x2="91" y2="261.66666666666663" />
+      <text x="68" y="178.33" class="dimension-text" transform="rotate(90 68 178.33333333333331)" text-anchor="middle">9 000 mm X - ANCHOR C/L</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="414" y1="95" x2="414" y2="595" />
+      <line x1="406" y1="95" x2="422" y2="95" />
+      <line x1="406" y1="595" x2="422" y2="595" />
+      <text x="429" y="345" class="dimension-text" transform="rotate(90 429 345)" text-anchor="middle">27 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="414" y1="595" x2="414" y2="715" />
+      <line x1="406" y1="595" x2="422" y2="595" />
+      <line x1="406" y1="715" x2="422" y2="715" />
+      <text x="429" y="655" class="dimension-text" transform="rotate(90 429 655)" text-anchor="middle">≈11 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="448" y1="595" x2="448" y2="643" />
+      <line x1="440" y1="595" x2="456" y2="595" />
+      <line x1="440" y1="643" x2="456" y2="643" />
+      <text x="463" y="619" class="dimension-text" transform="rotate(90 463 619)" text-anchor="middle">4 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="448" y1="643" x2="448" y2="715" />
+      <line x1="440" y1="643" x2="456" y2="643" />
+      <line x1="440" y1="715" x2="456" y2="715" />
+      <text x="463" y="679" class="dimension-text" transform="rotate(90 463 679)" text-anchor="middle">6 000 mm</text>
+    </g>
+    <text x="58" y="380" class="axis-label" transform="rotate(-90 58 380)" text-anchor="middle">X · LENGTH / LENGDE</text>
+    <text x="242" y="773" class="axis-label" text-anchor="middle">Y · WIDTH / BREDDE</text>
+  </g>
+
+  <g id="gable-view" aria-label="A-frame gable elevation" transform="translate(0 350)">
+    <text x="720" y="58" class="view-title" text-anchor="middle">A-FRAME / TRIANGELFASADE</text>
+    <polygon class="gable-fill" points="720,82 560,330 880,330" />
+    <line class="structure-heavy" x1="720" y1="82" x2="560" y2="330" />
+    <line class="structure-heavy" x1="720" y1="82" x2="880" y2="330" />
+    <line class="structure-heavy" x1="560" y1="330" x2="880" y2="330" />
+    <line class="structure-heavy" x1="658" y1="250.64000000000001" x2="782" y2="250.64000000000001" />
+
+      <g class="door gable-door" style="--door:#00a84f">
+        <rect x="619.6" y="266" width="60.8" height="64" />
+        <line class="door-divider" x1="650" y1="266" x2="650" y2="330" />
+        <path d="M 650 330 Q 607.6 305 619.6 266" />
+        <path d="M 650 330 Q 692.4 305 680.4 266" />
+        <line class="door-swing-direction" x1="650" y1="274" x2="650" y2="325" marker-end="url(#door-arrow)" />
+      </g>
+      <g class="door gable-door" style="--door:#00a84f">
+        <rect x="759.6" y="266" width="60.8" height="64" />
+        <line class="door-divider" x1="790" y1="266" x2="790" y2="330" />
+        <path d="M 790 330 Q 747.6 305 759.6 266" />
+        <path d="M 790 330 Q 832.4 305 820.4 266" />
+        <line class="door-swing-direction" x1="790" y1="274" x2="790" y2="325" marker-end="url(#door-arrow)" />
+      </g>
+
+
+      <g class="door gable-middle-door" data-wall="left" style="--door:#00a84f">
+        <path d="M 560 330 L 597.33 272.13 L 611.33 272.13 L 611.33 330" />
+        <line class="door-divider" x1="604.33" y1="284.13" x2="604.33" y2="330" />
+        <line x1="611.33" y1="316" x2="542" y2="316" marker-end="url(#door-arrow)" />
+      </g>
+      <g class="door gable-middle-door far-door" data-wall="right" style="--door:#00a84f">
+        <path d="M 880 330 L 842.67 272.13 L 828.67 272.13 L 828.67 330" />
+        <line class="door-divider" x1="835.67" y1="284.13" x2="835.67" y2="330" />
+        <line x1="828.67" y1="316" x2="898" y2="316" marker-end="url(#door-arrow)" />
+      </g>
+    <rect class="concrete" data-anchor-sample="B1-i-j" data-size-width-mm="1450" data-size-length-mm="1450" data-depth-mm="1000" x="536" y="330" width="48" height="38" />
+    <rect class="concrete" x="856" y="330" width="48" height="38" />
+    <circle class="anchor-point" cx="560" cy="330" r="6" />
+    <circle class="anchor-point" cx="880" cy="330" r="6" />
+    <circle class="anchor-point apex" cx="720" cy="82" r="5" />
+    <text x="560" y="354" class="anchor-label" text-anchor="middle">L1 · B1–B4</text>
+    <text x="880" y="354" class="anchor-label" text-anchor="middle">L2 · B5–B8</text>
+
+    <g class="dimension">
+      <line x1="522" y1="330" x2="522" y2="368" />
+      <line x1="514" y1="330" x2="530" y2="330" />
+      <line x1="514" y1="368" x2="530" y2="368" />
+      <text x="507" y="349" class="dimension-text" transform="rotate(90 507 349)" text-anchor="middle">1 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="856" y1="380" x2="904" y2="380" />
+      <line x1="856" y1="372" x2="856" y2="388" />
+      <line x1="904" y1="372" x2="904" y2="388" />
+      <text x="880" y="374" class="dimension-text" text-anchor="middle">1 450 mm</text>
+    </g>
+    <text x="530" y="382" class="anchor-coordinate-label" text-anchor="end">B1 i-j</text>
+
+    <g class="dimension">
+      <line x1="560" y1="406" x2="880" y2="406" />
+      <line x1="560" y1="398" x2="560" y2="414" />
+      <line x1="880" y1="398" x2="880" y2="414" />
+      <text x="720" y="400" class="dimension-text" text-anchor="middle">12 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="942" y1="82" x2="942" y2="330" />
+      <line x1="934" y1="82" x2="950" y2="82" />
+      <line x1="934" y1="330" x2="950" y2="330" />
+      <text x="957" y="206" class="dimension-text" transform="rotate(90 957 206)" text-anchor="middle">10 500 mm</text>
+    </g>
+    <text x="720" y="432" class="axis-label" text-anchor="middle">Y · WIDTH / BREDDE</text>
+    <text x="918" y="205" class="axis-label" transform="rotate(-90 918 205)" text-anchor="middle">Z · HEIGHT / HØYDE</text>
+  </g>
+
+  <g id="axonometric-view" aria-label="Three-dimensional schematic" transform="translate(0 -390)">
+    <text x="735" y="445" class="view-title" text-anchor="middle">3D SKETCH / 3D-SKISSE</text>
+    <g class="axon-graph-coordinate-space" transform="translate(0 0)">
+    <g class="shell-graph" data-clear-passage="E1B:F1B">
+      <line class="axon-frame graph-edge graph-frame" data-from="E4A" data-to="E4B" x1="560" y1="690" x2="605" y2="725" /><line class="axon-frame graph-edge graph-frame" data-from="E4B" data-to="E4C" x1="605" y1="725" x2="590" y2="595" /><line class="axon-frame graph-edge graph-frame" data-from="E4C" data-to="E4A" x1="590" y1="595" x2="560" y2="690" /><line class="axon-frame graph-edge graph-frame" data-from="E3A" data-to="E3B" x1="575.1351351351351" y1="683.2432432432432" x2="620.1351351351351" y2="718.2432432432432" /><line class="axon-frame graph-edge graph-frame" data-from="E3B" data-to="E3C" x1="620.1351351351351" y1="718.2432432432432" x2="605.1351351351351" y2="588.2432432432432" /><line class="axon-frame graph-edge graph-frame" data-from="E3C" data-to="E3A" x1="605.1351351351351" y1="588.2432432432432" x2="575.1351351351351" y2="683.2432432432432" /><line class="axon-frame graph-edge graph-rail" data-from="E4A" data-to="E3A" x1="560" y1="690" x2="575.1351351351351" y2="683.2432432432432" /><line class="axon-frame graph-edge graph-rail" data-from="E4B" data-to="E3B" x1="605" y1="725" x2="620.1351351351351" y2="718.2432432432432" /><line class="axon-frame graph-edge graph-rail" data-from="E4C" data-to="E3C" x1="590" y1="595" x2="605.1351351351351" y2="588.2432432432432" /><line class="axon-frame graph-edge graph-frame" data-from="E2A" data-to="E2B" x1="590.2702702702703" y1="676.4864864864865" x2="635.2702702702703" y2="711.4864864864865" /><line class="axon-frame graph-edge graph-frame" data-from="E2B" data-to="E2C" x1="635.2702702702703" y1="711.4864864864865" x2="620.2702702702703" y2="581.4864864864865" /><line class="axon-frame graph-edge graph-frame" data-from="E2C" data-to="E2A" x1="620.2702702702703" y1="581.4864864864865" x2="590.2702702702703" y2="676.4864864864865" /><line class="axon-frame graph-edge graph-rail" data-from="E3A" data-to="E2A" x1="575.1351351351351" y1="683.2432432432432" x2="590.2702702702703" y2="676.4864864864865" /><line class="axon-frame graph-edge graph-rail" data-from="E3B" data-to="E2B" x1="620.1351351351351" y1="718.2432432432432" x2="635.2702702702703" y2="711.4864864864865" /><line class="axon-frame graph-edge graph-rail" data-from="E3C" data-to="E2C" x1="605.1351351351351" y1="588.2432432432432" x2="620.2702702702703" y2="581.4864864864865" /><line class="axon-frame graph-edge graph-frame" data-from="E1A" data-to="E1B" x1="605.4054054054054" y1="669.7297297297297" x2="650.4054054054054" y2="704.7297297297297" /><line class="axon-frame graph-edge graph-frame" data-from="E1B" data-to="E1C" x1="650.4054054054054" y1="704.7297297297297" x2="635.4054054054054" y2="574.7297297297297" /><line class="axon-frame graph-edge graph-frame" data-from="E1C" data-to="E1A" x1="635.4054054054054" y1="574.7297297297297" x2="605.4054054054054" y2="669.7297297297297" /><line class="axon-frame graph-edge graph-rail" data-from="E2A" data-to="E1A" x1="590.2702702702703" y1="676.4864864864865" x2="605.4054054054054" y2="669.7297297297297" /><line class="axon-frame graph-edge graph-rail" data-from="E2B" data-to="E1B" x1="635.2702702702703" y1="711.4864864864865" x2="650.4054054054054" y2="704.7297297297297" /><line class="axon-frame graph-edge graph-rail" data-from="E2C" data-to="E1C" x1="620.2702702702703" y1="581.4864864864865" x2="635.4054054054054" y2="574.7297297297297" /><line class="axon-frame graph-edge graph-frame" data-from="F1A" data-to="F1B" x1="635.6756756756756" y1="656.2162162162163" x2="680.6756756756756" y2="691.2162162162163" /><line class="axon-frame graph-edge graph-frame" data-from="F1B" data-to="F1C" x1="680.6756756756756" y1="691.2162162162163" x2="665.6756756756756" y2="561.2162162162163" /><line class="axon-frame graph-edge graph-frame" data-from="F1C" data-to="F1A" x1="665.6756756756756" y1="561.2162162162163" x2="635.6756756756756" y2="656.2162162162163" /><line class="axon-frame graph-edge graph-frame" data-from="F2A" data-to="F2B" x1="652.7027027027027" y1="648.6148648648649" x2="697.7027027027027" y2="683.6148648648649" /><line class="axon-frame graph-edge graph-frame" data-from="F2B" data-to="F2C" x1="697.7027027027027" y1="683.6148648648649" x2="682.7027027027027" y2="553.6148648648649" /><line class="axon-frame graph-edge graph-frame" data-from="F2C" data-to="F2A" x1="682.7027027027027" y1="553.6148648648649" x2="652.7027027027027" y2="648.6148648648649" /><line class="axon-frame graph-edge graph-rail" data-from="F1A" data-to="F2A" x1="635.6756756756756" y1="656.2162162162163" x2="652.7027027027027" y2="648.6148648648649" /><line class="axon-frame graph-edge graph-rail" data-from="F1B" data-to="F2B" x1="680.6756756756756" y1="691.2162162162163" x2="697.7027027027027" y2="683.6148648648649" /><line class="axon-frame graph-edge graph-rail" data-from="F1C" data-to="F2C" x1="665.6756756756756" y1="561.2162162162163" x2="682.7027027027027" y2="553.6148648648649" /><line class="axon-frame graph-edge graph-frame" data-from="F3A" data-to="F3B" x1="669.7297297297297" y1="641.0135135135135" x2="714.7297297297297" y2="676.0135135135135" /><line class="axon-frame graph-edge graph-frame" data-from="F3B" data-to="F3C" x1="714.7297297297297" y1="676.0135135135135" x2="699.7297297297297" y2="546.0135135135135" /><line class="axon-frame graph-edge graph-frame" data-from="F3C" data-to="F3A" x1="699.7297297297297" y1="546.0135135135135" x2="669.7297297297297" y2="641.0135135135135" /><line class="axon-frame graph-edge graph-rail" data-from="F2A" data-to="F3A" x1="652.7027027027027" y1="648.6148648648649" x2="669.7297297297297" y2="641.0135135135135" /><line class="axon-frame graph-edge graph-rail" data-from="F2B" data-to="F3B" x1="697.7027027027027" y1="683.6148648648649" x2="714.7297297297297" y2="676.0135135135135" /><line class="axon-frame graph-edge graph-rail" data-from="F2C" data-to="F3C" x1="682.7027027027027" y1="553.6148648648649" x2="699.7297297297297" y2="546.0135135135135" /><line class="axon-frame graph-edge graph-frame" data-from="F4A" data-to="F4B" x1="686.7567567567568" y1="633.4121621621622" x2="731.7567567567568" y2="668.4121621621622" /><line class="axon-frame graph-edge graph-frame" data-from="F4B" data-to="F4C" x1="731.7567567567568" y1="668.4121621621622" x2="716.7567567567568" y2="538.4121621621622" /><line class="axon-frame graph-edge graph-frame" data-from="F4C" data-to="F4A" x1="716.7567567567568" y1="538.4121621621622" x2="686.7567567567568" y2="633.4121621621622" /><line class="axon-frame graph-edge graph-rail" data-from="F3A" data-to="F4A" x1="669.7297297297297" y1="641.0135135135135" x2="686.7567567567568" y2="633.4121621621622" /><line class="axon-frame graph-edge graph-rail" data-from="F3B" data-to="F4B" x1="714.7297297297297" y1="676.0135135135135" x2="731.7567567567568" y2="668.4121621621622" /><line class="axon-frame graph-edge graph-rail" data-from="F3C" data-to="F4C" x1="699.7297297297297" y1="546.0135135135135" x2="716.7567567567568" y2="538.4121621621622" /><line class="axon-frame graph-edge graph-frame" data-from="F5A" data-to="F5B" x1="703.7837837837837" y1="625.8108108108108" x2="748.7837837837837" y2="660.8108108108108" /><line class="axon-frame graph-edge graph-frame" data-from="F5B" data-to="F5C" x1="748.7837837837837" y1="660.8108108108108" x2="733.7837837837837" y2="530.8108108108108" /><line class="axon-frame graph-edge graph-frame" data-from="F5C" data-to="F5A" x1="733.7837837837837" y1="530.8108108108108" x2="703.7837837837837" y2="625.8108108108108" /><line class="axon-frame graph-edge graph-rail" data-from="F4A" data-to="F5A" x1="686.7567567567568" y1="633.4121621621622" x2="703.7837837837837" y2="625.8108108108108" /><line class="axon-frame graph-edge graph-rail" data-from="F4B" data-to="F5B" x1="731.7567567567568" y1="668.4121621621622" x2="748.7837837837837" y2="660.8108108108108" /><line class="axon-frame graph-edge graph-rail" data-from="F4C" data-to="F5C" x1="716.7567567567568" y1="538.4121621621622" x2="733.7837837837837" y2="530.8108108108108" /><line class="axon-frame graph-edge graph-frame" data-from="F6A" data-to="F6B" x1="720.8108108108108" y1="618.2094594594595" x2="765.8108108108108" y2="653.2094594594595" /><line class="axon-frame graph-edge graph-frame" data-from="F6B" data-to="F6C" x1="765.8108108108108" y1="653.2094594594595" x2="750.8108108108108" y2="523.2094594594595" /><line class="axon-frame graph-edge graph-frame" data-from="F6C" data-to="F6A" x1="750.8108108108108" y1="523.2094594594595" x2="720.8108108108108" y2="618.2094594594595" /><line class="axon-frame graph-edge graph-rail" data-from="F5A" data-to="F6A" x1="703.7837837837837" y1="625.8108108108108" x2="720.8108108108108" y2="618.2094594594595" /><line class="axon-frame graph-edge graph-rail" data-from="F5B" data-to="F6B" x1="748.7837837837837" y1="660.8108108108108" x2="765.8108108108108" y2="653.2094594594595" /><line class="axon-frame graph-edge graph-rail" data-from="F5C" data-to="F6C" x1="733.7837837837837" y1="530.8108108108108" x2="750.8108108108108" y2="523.2094594594595" /><line class="axon-frame graph-edge graph-frame" data-from="F7A" data-to="F7B" x1="737.8378378378378" y1="610.6081081081081" x2="782.8378378378378" y2="645.6081081081081" /><line class="axon-frame graph-edge graph-frame" data-from="F7B" data-to="F7C" x1="782.8378378378378" y1="645.6081081081081" x2="767.8378378378378" y2="515.6081081081081" /><line class="axon-frame graph-edge graph-frame" data-from="F7C" data-to="F7A" x1="767.8378378378378" y1="515.6081081081081" x2="737.8378378378378" y2="610.6081081081081" /><line class="axon-frame graph-edge graph-rail" data-from="F6A" data-to="F7A" x1="720.8108108108108" y1="618.2094594594595" x2="737.8378378378378" y2="610.6081081081081" /><line class="axon-frame graph-edge graph-rail" data-from="F6B" data-to="F7B" x1="765.8108108108108" y1="653.2094594594595" x2="782.8378378378378" y2="645.6081081081081" /><line class="axon-frame graph-edge graph-rail" data-from="F6C" data-to="F7C" x1="750.8108108108108" y1="523.2094594594595" x2="767.8378378378378" y2="515.6081081081081" /><line class="axon-frame graph-edge graph-frame" data-from="F8A" data-to="F8B" x1="754.8648648648649" y1="603.0067567567568" x2="799.8648648648649" y2="638.0067567567568" /><line class="axon-frame graph-edge graph-frame" data-from="F8B" data-to="F8C" x1="799.8648648648649" y1="638.0067567567568" x2="784.8648648648649" y2="508.0067567567568" /><line class="axon-frame graph-edge graph-frame" data-from="F8C" data-to="F8A" x1="784.8648648648649" y1="508.0067567567568" x2="754.8648648648649" y2="603.0067567567568" /><line class="axon-frame graph-edge graph-rail" data-from="F7A" data-to="F8A" x1="737.8378378378378" y1="610.6081081081081" x2="754.8648648648649" y2="603.0067567567568" /><line class="axon-frame graph-edge graph-rail" data-from="F7B" data-to="F8B" x1="782.8378378378378" y1="645.6081081081081" x2="799.8648648648649" y2="638.0067567567568" /><line class="axon-frame graph-edge graph-rail" data-from="F7C" data-to="F8C" x1="767.8378378378378" y1="515.6081081081081" x2="784.8648648648649" y2="508.0067567567568" /><line class="axon-frame graph-edge graph-frame" data-from="F9A" data-to="F9B" x1="771.8918918918919" y1="595.4054054054054" x2="816.8918918918919" y2="630.4054054054054" /><line class="axon-frame graph-edge graph-frame" data-from="F9B" data-to="F9C" x1="816.8918918918919" y1="630.4054054054054" x2="801.8918918918919" y2="500.4054054054054" /><line class="axon-frame graph-edge graph-frame" data-from="F9C" data-to="F9A" x1="801.8918918918919" y1="500.4054054054054" x2="771.8918918918919" y2="595.4054054054054" /><line class="axon-frame graph-edge graph-rail" data-from="F8A" data-to="F9A" x1="754.8648648648649" y1="603.0067567567568" x2="771.8918918918919" y2="595.4054054054054" /><line class="axon-frame graph-edge graph-rail" data-from="F8B" data-to="F9B" x1="799.8648648648649" y1="638.0067567567568" x2="816.8918918918919" y2="630.4054054054054" /><line class="axon-frame graph-edge graph-rail" data-from="F8C" data-to="F9C" x1="784.8648648648649" y1="508.0067567567568" x2="801.8918918918919" y2="500.4054054054054" /><line class="axon-frame graph-edge graph-frame" data-from="F10A" data-to="F10B" x1="788.918918918919" y1="587.8040540540541" x2="833.918918918919" y2="622.8040540540541" /><line class="axon-frame graph-edge graph-frame" data-from="F10B" data-to="F10C" x1="833.918918918919" y1="622.8040540540541" x2="818.918918918919" y2="492.80405405405406" /><line class="axon-frame graph-edge graph-frame" data-from="F10C" data-to="F10A" x1="818.918918918919" y1="492.80405405405406" x2="788.918918918919" y2="587.8040540540541" /><line class="axon-frame graph-edge graph-rail" data-from="F9A" data-to="F10A" x1="771.8918918918919" y1="595.4054054054054" x2="788.918918918919" y2="587.8040540540541" /><line class="axon-frame graph-edge graph-rail" data-from="F9B" data-to="F10B" x1="816.8918918918919" y1="630.4054054054054" x2="833.918918918919" y2="622.8040540540541" /><line class="axon-frame graph-edge graph-rail" data-from="F9C" data-to="F10C" x1="801.8918918918919" y1="500.4054054054054" x2="818.918918918919" y2="492.80405405405406" /><line class="axon-frame graph-edge graph-frame" data-from="F11A" data-to="F11B" x1="805.9459459459459" y1="580.2027027027027" x2="850.9459459459459" y2="615.2027027027027" /><line class="axon-frame graph-edge graph-frame" data-from="F11B" data-to="F11C" x1="850.9459459459459" y1="615.2027027027027" x2="835.9459459459459" y2="485.2027027027027" /><line class="axon-frame graph-edge graph-frame" data-from="F11C" data-to="F11A" x1="835.9459459459459" y1="485.2027027027027" x2="805.9459459459459" y2="580.2027027027027" /><line class="axon-frame graph-edge graph-rail" data-from="F10A" data-to="F11A" x1="788.918918918919" y1="587.8040540540541" x2="805.9459459459459" y2="580.2027027027027" /><line class="axon-frame graph-edge graph-rail" data-from="F10B" data-to="F11B" x1="833.918918918919" y1="622.8040540540541" x2="850.9459459459459" y2="615.2027027027027" /><line class="axon-frame graph-edge graph-rail" data-from="F10C" data-to="F11C" x1="818.918918918919" y1="492.80405405405406" x2="835.9459459459459" y2="485.2027027027027" /><line class="axon-frame graph-edge graph-frame" data-from="F12A" data-to="F12B" x1="822.9729729729729" y1="572.6013513513514" x2="867.9729729729729" y2="607.6013513513514" /><line class="axon-frame graph-edge graph-frame" data-from="F12B" data-to="F12C" x1="867.9729729729729" y1="607.6013513513514" x2="852.9729729729729" y2="477.60135135135135" /><line class="axon-frame graph-edge graph-frame" data-from="F12C" data-to="F12A" x1="852.9729729729729" y1="477.60135135135135" x2="822.9729729729729" y2="572.6013513513514" /><line class="axon-frame graph-edge graph-rail" data-from="F11A" data-to="F12A" x1="805.9459459459459" y1="580.2027027027027" x2="822.9729729729729" y2="572.6013513513514" /><line class="axon-frame graph-edge graph-rail" data-from="F11B" data-to="F12B" x1="850.9459459459459" y1="615.2027027027027" x2="867.9729729729729" y2="607.6013513513514" /><line class="axon-frame graph-edge graph-rail" data-from="F11C" data-to="F12C" x1="835.9459459459459" y1="485.2027027027027" x2="852.9729729729729" y2="477.60135135135135" /><line class="axon-frame graph-edge graph-frame" data-from="F13A" data-to="F13B" x1="840" y1="565" x2="885" y2="600" /><line class="axon-frame graph-edge graph-frame" data-from="F13B" data-to="F13C" x1="885" y1="600" x2="870" y2="470" /><line class="axon-frame graph-edge graph-frame" data-from="F13C" data-to="F13A" x1="870" y1="470" x2="840" y2="565" /><line class="axon-frame graph-edge graph-rail" data-from="F12A" data-to="F13A" x1="822.9729729729729" y1="572.6013513513514" x2="840" y2="565" /><line class="axon-frame graph-edge graph-rail" data-from="F12B" data-to="F13B" x1="867.9729729729729" y1="607.6013513513514" x2="885" y2="600" /><line class="axon-frame graph-edge graph-rail" data-from="F12C" data-to="F13C" x1="852.9729729729729" y1="477.60135135135135" x2="870" y2="470" /><line class="axon-frame graph-edge graph-rail" data-from="E1A" data-to="F1A" x1="605.4054054054054" y1="669.7297297297297" x2="635.6756756756756" y2="656.2162162162163" /><line class="axon-frame graph-edge graph-rail" data-from="E1C" data-to="F1C" x1="635.4054054054054" y1="574.7297297297297" x2="665.6756756756756" y2="561.2162162162163" />
+      <circle class="anchor-point graph-node concrete-anchor-node" data-node="E4A" data-anchor="L1-OUTER" cx="560" cy="690" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="E4B" data-anchor="L2-OUTER" cx="605" cy="725" r="5" /><circle class="anchor-point graph-node" data-node="E4C" data-anchor="" cx="590" cy="595" r="3.5" /><circle class="anchor-point graph-node" data-node="E3A" data-anchor="" cx="575.1351351351351" cy="683.2432432432432" r="3.5" /><circle class="anchor-point graph-node" data-node="E3B" data-anchor="" cx="620.1351351351351" cy="718.2432432432432" r="3.5" /><circle class="anchor-point graph-node" data-node="E3C" data-anchor="" cx="605.1351351351351" cy="588.2432432432432" r="3.5" /><circle class="anchor-point graph-node" data-node="E2A" data-anchor="" cx="590.2702702702703" cy="676.4864864864865" r="3.5" /><circle class="anchor-point graph-node" data-node="E2B" data-anchor="" cx="635.2702702702703" cy="711.4864864864865" r="3.5" /><circle class="anchor-point graph-node" data-node="E2C" data-anchor="" cx="620.2702702702703" cy="581.4864864864865" r="3.5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="E1A" data-anchor="L1-INNER" cx="605.4054054054054" cy="669.7297297297297" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="E1B" data-anchor="L2-INNER" cx="650.4054054054054" cy="704.7297297297297" r="5" /><circle class="anchor-point graph-node" data-node="E1C" data-anchor="" cx="635.4054054054054" cy="574.7297297297297" r="3.5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F1A" data-anchor="B1" cx="635.6756756756756" cy="656.2162162162163" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F1B" data-anchor="B5" cx="680.6756756756756" cy="691.2162162162163" r="5" /><circle class="anchor-point graph-node" data-node="F1C" data-anchor="" cx="665.6756756756756" cy="561.2162162162163" r="3.5" /><circle class="anchor-point graph-node" data-node="F2A" data-anchor="" cx="652.7027027027027" cy="648.6148648648649" r="3.5" /><circle class="anchor-point graph-node" data-node="F2B" data-anchor="" cx="697.7027027027027" cy="683.6148648648649" r="3.5" /><circle class="anchor-point graph-node" data-node="F2C" data-anchor="" cx="682.7027027027027" cy="553.6148648648649" r="3.5" /><circle class="anchor-point graph-node" data-node="F3A" data-anchor="" cx="669.7297297297297" cy="641.0135135135135" r="3.5" /><circle class="anchor-point graph-node" data-node="F3B" data-anchor="" cx="714.7297297297297" cy="676.0135135135135" r="3.5" /><circle class="anchor-point graph-node" data-node="F3C" data-anchor="" cx="699.7297297297297" cy="546.0135135135135" r="3.5" /><circle class="anchor-point graph-node" data-node="F4A" data-anchor="" cx="686.7567567567568" cy="633.4121621621622" r="3.5" /><circle class="anchor-point graph-node" data-node="F4B" data-anchor="" cx="731.7567567567568" cy="668.4121621621622" r="3.5" /><circle class="anchor-point graph-node" data-node="F4C" data-anchor="" cx="716.7567567567568" cy="538.4121621621622" r="3.5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F5A" data-anchor="B2" cx="703.7837837837837" cy="625.8108108108108" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F5B" data-anchor="B6" cx="748.7837837837837" cy="660.8108108108108" r="5" /><circle class="anchor-point graph-node" data-node="F5C" data-anchor="" cx="733.7837837837837" cy="530.8108108108108" r="3.5" /><circle class="anchor-point graph-node" data-node="F6A" data-anchor="" cx="720.8108108108108" cy="618.2094594594595" r="3.5" /><circle class="anchor-point graph-node" data-node="F6B" data-anchor="" cx="765.8108108108108" cy="653.2094594594595" r="3.5" /><circle class="anchor-point graph-node" data-node="F6C" data-anchor="" cx="750.8108108108108" cy="523.2094594594595" r="3.5" /><circle class="anchor-point graph-node" data-node="F7A" data-anchor="" cx="737.8378378378378" cy="610.6081081081081" r="3.5" /><circle class="anchor-point graph-node" data-node="F7B" data-anchor="" cx="782.8378378378378" cy="645.6081081081081" r="3.5" /><circle class="anchor-point graph-node" data-node="F7C" data-anchor="" cx="767.8378378378378" cy="515.6081081081081" r="3.5" /><circle class="anchor-point graph-node" data-node="F8A" data-anchor="" cx="754.8648648648649" cy="603.0067567567568" r="3.5" /><circle class="anchor-point graph-node" data-node="F8B" data-anchor="" cx="799.8648648648649" cy="638.0067567567568" r="3.5" /><circle class="anchor-point graph-node" data-node="F8C" data-anchor="" cx="784.8648648648649" cy="508.0067567567568" r="3.5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F9A" data-anchor="B3" cx="771.8918918918919" cy="595.4054054054054" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F9B" data-anchor="B7" cx="816.8918918918919" cy="630.4054054054054" r="5" /><circle class="anchor-point graph-node" data-node="F9C" data-anchor="" cx="801.8918918918919" cy="500.4054054054054" r="3.5" /><circle class="anchor-point graph-node" data-node="F10A" data-anchor="" cx="788.918918918919" cy="587.8040540540541" r="3.5" /><circle class="anchor-point graph-node" data-node="F10B" data-anchor="" cx="833.918918918919" cy="622.8040540540541" r="3.5" /><circle class="anchor-point graph-node" data-node="F10C" data-anchor="" cx="818.918918918919" cy="492.80405405405406" r="3.5" /><circle class="anchor-point graph-node" data-node="F11A" data-anchor="" cx="805.9459459459459" cy="580.2027027027027" r="3.5" /><circle class="anchor-point graph-node" data-node="F11B" data-anchor="" cx="850.9459459459459" cy="615.2027027027027" r="3.5" /><circle class="anchor-point graph-node" data-node="F11C" data-anchor="" cx="835.9459459459459" cy="485.2027027027027" r="3.5" /><circle class="anchor-point graph-node" data-node="F12A" data-anchor="" cx="822.9729729729729" cy="572.6013513513514" r="3.5" /><circle class="anchor-point graph-node" data-node="F12B" data-anchor="" cx="867.9729729729729" cy="607.6013513513514" r="3.5" /><circle class="anchor-point graph-node" data-node="F12C" data-anchor="" cx="852.9729729729729" cy="477.60135135135135" r="3.5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F13A" data-anchor="B4" cx="840" cy="565" r="5" /><circle class="anchor-point graph-node concrete-anchor-node" data-node="F13B" data-anchor="B8" cx="885" cy="600" r="5" /><circle class="anchor-point graph-node" data-node="F13C" data-anchor="" cx="870" cy="470" r="3.5" />
+      <text x="548" y="681" class="graph-node-label" text-anchor="middle">A</text><text x="617" y="739" class="graph-node-label" text-anchor="middle">B</text><text x="578" y="587" class="graph-node-label" text-anchor="middle">C</text>
+    </g>
+    <g class="graph-end-doors" style="--door:#00a84f"><g data-end-door-set="1"><polygon class="graph-end-door" data-end-door="1" points="571.5,663.5 563.6,692.8 575.8,702.3 580,670.1" /><line class="graph-door-divider" x1="567.55" y1="678.15" x2="577.9" y2="686.2" /></g><g data-end-door-set="2"><polygon class="graph-end-door" data-end-door="2" points="589.5,677.4 589.3,712.8 601.4,722.2 598,684" /><line class="graph-door-divider" x1="589.4" y1="695.0999999999999" x2="599.7" y2="703.1" /></g><g data-end-door-set="3"><polygon class="graph-end-door far-door" data-end-door="3" points="851.5,538.5 843.6,567.8 855.8,577.3 860,545.1" /><line class="graph-door-divider far-door" x1="847.55" y1="553.15" x2="857.9" y2="561.2" /></g><g data-end-door-set="4"><polygon class="graph-end-door far-door" data-end-door="4" points="869.5,552.4 869.3,587.8 881.4,597.2 878,559" /><line class="graph-door-divider far-door" x1="869.4" y1="570.0999999999999" x2="879.7" y2="578.1" /></g></g>
+
+
+    <g class="graph-door-arrows" style="--door:#00a84f"><line class="graph-door-direction" data-door-arrow="end-start-1" x1="572.7249999999999" y1="682.175" x2="559.7249999999999" y2="689.175" marker-end="url(#door-arrow)" /><line class="graph-door-direction" data-door-arrow="end-start-2" x1="594.55" y1="699.0999999999999" x2="581.55" y2="706.0999999999999" marker-end="url(#door-arrow)" /><line class="graph-door-direction far-door" data-door-arrow="end-far-1" x1="852.7249999999999" y1="557.175" x2="865.7249999999999" y2="550.175" marker-end="url(#door-arrow)" /><line class="graph-door-direction far-door" data-door-arrow="end-far-2" x1="874.55" y1="574.0999999999999" x2="887.55" y2="567.0999999999999" marker-end="url(#door-arrow)" /><line class="graph-door-direction" data-door-arrow="middle-near" x1="788.3108108108108" y1="618.5594594594595" x2="800.3108108108108" y2="628.5594594594595" marker-end="url(#door-arrow)" /><line class="graph-door-direction far-door" data-door-arrow="middle-far" x1="751.4108108108107" y1="589.8594594594595" x2="739.4108108108107" y2="579.8594594594595" marker-end="url(#door-arrow)" /></g>
+    <g class="graph-side-doors" style="--door:#00a84f"><g data-side-door-set="1"><polygon class="graph-side-door" data-side-door="1" points="781.2108108108108,646.3344594594595 800.8108108108108,637.5844594594595 795.4108108108109,590.7844594594594 775.8108108108108,599.5344594594595" /><line class="graph-door-divider" x1="791.0108108108109" y1="641.9594594594595" x2="785.6108108108109" y2="595.1594594594595" /></g><g data-side-door-set="2"><polygon class="graph-side-door far-door" data-side-door="2" points="736.2108108108108,611.3344594594595 755.8108108108108,602.5844594594595 766.6108108108108,568.3844594594594 747.0108108108108,577.1344594594594" /><line class="graph-door-divider far-door" x1="746.0108108108109" y1="606.9594594594595" x2="756.8108108108108" y2="572.7594594594594" /></g></g>
+    <g class="axis">
+      <line class="axis-guide" x1="458" y1="470" x2="870" y2="470" /><line class="axis-guide" x1="885" y1="600" x2="885" y2="735" />
+      <circle cx="458" cy="735" r="3" />
+      <line x1="458" y1="735" x2="560" y2="690" marker-end="url(#axis-arrow)" />
+      <line x1="458" y1="735" x2="915" y2="735" marker-end="url(#axis-arrow)" />
+      <line x1="458" y1="735" x2="458" y2="470" marker-end="url(#axis-arrow)" />
+      <text x="520" y="708" class="axis-letter" >X</text>
+      <text x="925" y="739" class="axis-letter" >Y</text>
+      <text x="448" y="462" class="axis-letter" >Z</text>
+    </g>
+    </g>
+    <text x="735" y="748" class="axis-label" text-anchor="middle">X LENGTH/LENGDE · Y WIDTH/BREDDE · Z HEIGHT/HØYDE</text>
+  </g>
+
+  <g id="side-view" aria-label="Long side elevation">
+    <text x="505" y="802" class="view-title" text-anchor="middle">SIDE VIEW / LANGFASADE</text>
+    <rect class="wall-fill" x="340" y="835" width="590" height="370" />
+    <rect class="concrete-rail concrete-rail-side" x="340" y="1205" width="590" height="10" />
+    <line class="structure-heavy" x1="80" y1="835" x2="930" y2="835" /><line class="station-line" x1="80" y1="909" x2="930" y2="909" /><line class="station-line" x1="80" y1="983" x2="930" y2="983" /><line class="station-line" x1="80" y1="1057" x2="930" y2="1057" /><line class="station-line" x1="80" y1="1131" x2="930" y2="1131" />
+        <line class="structure-heavy passage-ground-extension" x1="80" y1="1205" x2="236" y2="1205" />
+        <line class="structure-heavy passage-ground-shell" x1="340" y1="1205" x2="930" y2="1205" />
+
+    <line class="station-line" x1="340" y1="835" x2="340" y2="1205" />
+    <text x="340" y="825" class="station-label" text-anchor="middle">1</text>
+    <line class="station-line" x1="389.17" y1="835" x2="389.17" y2="1205" />
+    <text x="389.17" y="825" class="station-label" text-anchor="middle">2</text>
+    <line class="station-line" x1="438.33" y1="835" x2="438.33" y2="1205" />
+    <text x="438.33" y="825" class="station-label" text-anchor="middle">3</text>
+    <line class="station-line" x1="487.5" y1="835" x2="487.5" y2="1205" />
+    <text x="487.5" y="825" class="station-label" text-anchor="middle">4</text>
+    <line class="station-line" x1="536.67" y1="835" x2="536.67" y2="1205" />
+    <text x="536.67" y="825" class="station-label" text-anchor="middle">5</text>
+    <line class="station-line" x1="585.83" y1="835" x2="585.83" y2="1205" />
+    <text x="585.83" y="825" class="station-label" text-anchor="middle">6</text>
+    <line class="station-line" x1="635" y1="835" x2="635" y2="1205" />
+    <text x="635" y="825" class="station-label" text-anchor="middle">7</text>
+    <line class="station-line" x1="684.17" y1="835" x2="684.17" y2="1205" />
+    <text x="684.17" y="825" class="station-label" text-anchor="middle">8</text>
+    <line class="station-line" x1="733.33" y1="835" x2="733.33" y2="1205" />
+    <text x="733.33" y="825" class="station-label" text-anchor="middle">9</text>
+    <line class="station-line" x1="782.5" y1="835" x2="782.5" y2="1205" />
+    <text x="782.5" y="825" class="station-label" text-anchor="middle">10</text>
+    <line class="station-line" x1="831.67" y1="835" x2="831.67" y2="1205" />
+    <text x="831.67" y="825" class="station-label" text-anchor="middle">11</text>
+    <line class="station-line" x1="880.83" y1="835" x2="880.83" y2="1205" />
+    <text x="880.83" y="825" class="station-label" text-anchor="middle">12</text>
+    <line class="station-line" x1="930" y1="835" x2="930" y2="1205" />
+    <text x="930" y="825" class="station-label" text-anchor="middle">13</text>
+
+      <line class="station-line " x1="80" y1="835" x2="80" y2="1205" />
+      <text x="80" y="825" class="station-label" text-anchor="middle">E4</text>
+      <line class="station-line " x1="132" y1="835" x2="132" y2="1205" />
+      <text x="132" y="825" class="station-label" text-anchor="middle">E3</text>
+      <line class="station-line " x1="184" y1="835" x2="184" y2="1205" />
+      <text x="184" y="825" class="station-label" text-anchor="middle">E2</text>
+      <line class="station-line clear-interface passage-boundary" x1="236" y1="835" x2="236" y2="1205" />
+      <text x="236" y="825" class="station-label" text-anchor="middle">E1</text>
+      <line class="station-line " x1="340" y1="835" x2="340" y2="1205" />
+      <text x="340" y="825" class="station-label" text-anchor="middle">1</text>
+    <line class="structure-heavy passage-header" x1="236" y1="1090.3" x2="340" y2="1090.3" />
+    <text x="191" y="1108.3" class="passage-label" text-anchor="middle">CLEAR PASSAGE / ÅPEN PASSASJE</text>
+    <line class="structure-heavy" x1="340" y1="835" x2="340" y2="1205" />
+    <line class="structure-heavy" x1="930" y1="835" x2="930" y2="1205" />
+
+      <g class="wire-bracing">
+        <line class="wire-near" x1="340" y1="835" x2="552.4" y2="1205" />
+        <line class="wire-near" x1="340" y1="1205" x2="552.4" y2="835" />
+        <path class="wire-far" d="M 340 835 Q 446.2 1002 552.4 1205" />
+        <path class="wire-far" d="M 340 1205 Q 446.2 1038 552.4 835" />
+      </g>
+      <g class="wire-bracing">
+        <line class="wire-near" x1="705.8" y1="835" x2="930" y2="1205" />
+        <line class="wire-near" x1="705.8" y1="1205" x2="930" y2="835" />
+        <path class="wire-far" d="M 705.8 835 Q 817.9 1002 930 1205" />
+        <path class="wire-far" d="M 705.8 1205 Q 817.9 1038 930 835" />
+      </g>
+    <g class="door side-elevation-door" style="--door:#00a84f">
+      <rect x="641.12" y="1118.67" width="34.96" height="86.33" />
+      <line class="door-divider" x1="652.77" y1="1118.67" x2="652.77" y2="1205" />
+      <path d="M 658.6 1205 Q 626.12 1161.83 641.12 1118.6666666666667" />
+      <path d="M 658.6 1205 Q 691.08 1161.83 676.08 1118.6666666666667" />
+      <line class="door-swing-direction" x1="658.6" y1="1126.67" x2="658.6" y2="1200" marker-end="url(#door-arrow)" />
+      <rect class="canopy" x="633.12" y="1102.67" width="50.96" height="8" />
+    </g>
+
+    <g class="edge-door-indicators" style="--door:#00a84f">
+      <rect x="308" y="1135" width="32" height="70" />
+      <line x1="308" y1="1170" x2="286" y2="1170" marker-end="url(#door-arrow)" />
+      <rect x="930" y="1135" width="32" height="70" />
+      <line x1="962" y1="1170" x2="984" y2="1170" marker-end="url(#door-arrow)" />
+    </g>
+    <rect class="concrete-rail extension-connector-side" x="80" y="1205" width="156" height="10" />
+
+      <rect class="concrete" data-anchor="B1" data-depth-mm="1000" x="322" y="1205" width="36" height="34" />
+      <circle class="anchor-point" cx="340" cy="1205" r="5" />
+      <text x="340" y="1228" class="anchor-label" text-anchor="middle">B1</text>
+      <rect class="concrete" data-anchor="B2" data-depth-mm="1000" x="518.67" y="1205" width="36" height="34" />
+      <circle class="anchor-point" cx="536.67" cy="1205" r="5" />
+      <text x="536.67" y="1228" class="anchor-label" text-anchor="middle">B2</text>
+      <rect class="concrete" data-anchor="B3" data-depth-mm="1000" x="715.33" y="1205" width="36" height="34" />
+      <circle class="anchor-point" cx="733.33" cy="1205" r="5" />
+      <text x="733.33" y="1228" class="anchor-label" text-anchor="middle">B3</text>
+      <rect class="concrete" data-anchor="B4" data-depth-mm="1000" x="912" y="1205" width="36" height="34" />
+      <circle class="anchor-point" cx="930" cy="1205" r="5" />
+      <text x="930" y="1228" class="anchor-label" text-anchor="middle">B4</text>
+
+      <rect class="concrete extension-anchor-pad extension-anchor-pad-side" data-anchor="L1-OUTER" data-depth-mm="1000" x="62" y="1205" width="36" height="34" />
+      <rect class="concrete extension-anchor-pad extension-anchor-pad-side" data-anchor="L1-INNER" data-depth-mm="1000" x="218" y="1205" width="36" height="34" />
+      <circle class="anchor-point" cx="80" cy="1205" r="5" />
+      <circle class="anchor-point" cx="236" cy="1205" r="5" />
+      <text x="210" y="1229" class="anchor-label" text-anchor="middle">L1</text>
+
+
+    <g class="dimension">
+      <line x1="340" y1="1267" x2="930" y2="1267" />
+      <line x1="340" y1="1259" x2="340" y2="1275" />
+      <line x1="930" y1="1259" x2="930" y2="1275" />
+      <text x="635" y="1261" class="dimension-text" text-anchor="middle">27 000 mm · 12 BAYS</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="80" y1="1267" x2="236" y2="1267" />
+      <line x1="80" y1="1259" x2="80" y2="1275" />
+      <line x1="236" y1="1259" x2="236" y2="1275" />
+      <text x="158" y="1261" class="dimension-text" text-anchor="middle">6 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="236" y1="1267" x2="340" y2="1267" />
+      <line x1="236" y1="1259" x2="236" y2="1275" />
+      <line x1="340" y1="1259" x2="340" y2="1275" />
+      <text x="288" y="1261" class="dimension-text" text-anchor="middle">4 000 mm PASSAGE</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="80" y1="1297" x2="930" y2="1297" />
+      <line x1="80" y1="1289" x2="80" y2="1305" />
+      <line x1="930" y1="1289" x2="930" y2="1305" />
+      <text x="505" y="1291" class="dimension-text" text-anchor="middle">TOTAL ≈38 000 mm</text>
+    </g>
+
+    <g class="dimension">
+      <line x1="950" y1="835" x2="950" y2="1205" />
+      <line x1="942" y1="835" x2="958" y2="835" />
+      <line x1="942" y1="1205" x2="958" y2="1205" />
+      <text x="935" y="1020" class="dimension-text" transform="rotate(90 935 1020)" text-anchor="middle">10 500 mm</text>
+    </g>
+    <text x="505" y="1330" class="axis-label" text-anchor="middle">X · LENGTH / LENGDE</text>
+    <text x="972" y="1020" class="axis-label" transform="rotate(-90 972 1020)" text-anchor="middle">Z · HEIGHT / HØYDE</text>
+  </g>
+
+  <g class="title-block">
+    <rect x="35" y="1345" width="930" height="42" />
+    <line x1="390" y1="1345" x2="390" y2="1387" />
+    <line x1="730" y1="1345" x2="730" y2="1387" />
+    <line x1="855" y1="1345" x2="855" y2="1387" />
+    <text x="48" y="1364" class="title-main" >HALL - PLAN OG FASADER</text>
+    <text x="48" y="1380" class="title-small" >T2 · TEMPLATE-GENERATED</text>
+    <text x="405" y="1364" class="title-small" >DIMENSIONS PROVISIONAL / MÅL FORELØPIGE</text>
+    <text x="405" y="1380" class="title-small" >VERIFY ON SITE / KONTROLLERES PÅ STEDET</text>
+    <text x="745" y="1364" class="title-small" >SCALE / MÅLESTOKK</text>
+    <text x="745" y="1380" class="title-small" >NTS · DRAFT</text>
+    <text x="870" y="1364" class="title-small" >DRAWING / TEGNING</text>
+    <text x="870" y="1380" class="title-small" >A1100-T · T2</text>
+    <text x="500" y="1398" class="provenance" text-anchor="middle">EXAMPLE BUILDING — DRAFT, NOT FOR CONSTRUCTION</text>
+  </g>
+  </svg>
+</body>
+</html>

@@ -1,47 +1,28 @@
-const hallFrontFrame = {
-  A: [560, 690],
-  B: [605, 725],
-  C: [590, 595]
-};
-const hallLongitudinalOffset = [280, -125];
-const hallFrames = [
-  ["E4", 0],
-  ["E3", 0.055],
-  ["E2", 0.11],
-  ["E1", 0.165],
-  ...Array.from({ length: 13 }, (_, index) => [
-    `F${index + 1}`,
-    0.27 + (index / 12) * 0.73
-  ])
-];
-const hallNodes = {};
-const hallEdges = [];
+import { extrude, obliqueView, profiles, projectSolid, stationRun } from "../geometry.mjs";
 
+// The Hall as a solid: four extension frames over the outer anchor span, an open
+// passage, then thirteen frames over the closed length. Station places are the
+// real distances, so the sketch is in proportion.
+const HALL = { widthMm: 12000, heightMm: 10500, closedMm: 27000, passageMm: 4000, extensionSpanMm: 6000 };
+const hallSketchLengthMm = HALL.extensionSpanMm + HALL.passageMm + HALL.closedMm;
+const hallClosedStart = (HALL.extensionSpanMm + HALL.passageMm) / hallSketchLengthMm;
+const hallClosedShare = HALL.closedMm / hallSketchLengthMm;
+const hallProfile = profiles.aframe({ widthMm: HALL.widthMm, heightMm: HALL.heightMm });
+// E4 is the outer end of the extension and E1 the frame nearest the passage.
+const hallExtensionRun = stationRun("E", 4, 0, HALL.extensionSpanMm / hallSketchLengthMm)
+  .map((station, index) => ({ ...station, id: `E${4 - index}` }));
+const hallSolid = extrude(
+  hallProfile,
+  [hallExtensionRun, stationRun("F", 13, hallClosedStart, 1)],
+  { lengthMm: hallSketchLengthMm }
+);
+const hallView = obliqueView({ origin: [560, 690], along: [280, -125], across: [45, 35], up: [7.5, -112.5] });
+const { nodes: hallNodes, edges: hallEdges } = projectSolid(hallSolid, hallView);
+const hallLongitudinalOffset = hallView.along;
+
+// A point of the section at a ratio along the sketch; `point` is A, B or C.
 function hallPoint(point, ratio) {
-  return [
-    hallFrontFrame[point][0] + hallLongitudinalOffset[0] * ratio,
-    hallFrontFrame[point][1] + hallLongitudinalOffset[1] * ratio
-  ];
-}
-
-for (const [frame, ratio] of hallFrames) {
-  for (const point of ["A", "B", "C"]) hallNodes[`${frame}${point}`] = hallPoint(point, ratio);
-  hallEdges.push(
-    [`${frame}A`, `${frame}B`, "frame"],
-    [`${frame}B`, `${frame}C`, "frame"],
-    [`${frame}C`, `${frame}A`, "frame"]
-  );
-}
-
-for (const group of [
-  ["E4", "E3", "E2", "E1"],
-  Array.from({ length: 13 }, (_, index) => `F${index + 1}`)
-]) {
-  for (let index = 1; index < group.length; index += 1) {
-    for (const point of ["A", "B", "C"]) {
-      hallEdges.push([`${group[index - 1]}${point}`, `${group[index]}${point}`, "rail"]);
-    }
-  }
+  return hallView.at(hallProfile, ratio, hallProfile.vertices[point]);
 }
 
 // The ridge and far base rail bridge the interface; the near base rail stays open for passage.
@@ -88,7 +69,7 @@ function wallDoor(basePoint, ratio, far = false) {
   };
 }
 
-const hallMiddleRatio = 0.27 + 0.54 * 0.73;
+const hallMiddleRatio = hallClosedStart + 0.54 * hallClosedShare;
 const hallEndDoors = [
   { points: endDoorLeft, divider: dividerFor(endDoorLeft) },
   { points: endDoorRight, divider: dividerFor(endDoorRight) },
@@ -166,9 +147,9 @@ export const hall = {
   },
 
   dimensions: {
-    closedLengthMm: 27000,
-    widthMm: 12000,
-    heightMm: 10500,
+    closedLengthMm: HALL.closedMm,
+    widthMm: HALL.widthMm,
+    heightMm: HALL.heightMm,
     extensionLengthMm: 11000
   },
 
@@ -179,8 +160,8 @@ export const hall = {
       depthMm: 1000
     },
     extension: {
-      passageLengthMm: 4000,
-      anchorSpanMm: 6000,
+      passageLengthMm: HALL.passageMm,
+      anchorSpanMm: HALL.extensionSpanMm,
       overallLengthMm: 11000
     }
   },

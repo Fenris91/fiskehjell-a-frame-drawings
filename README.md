@@ -83,6 +83,23 @@ with insulation, and the finished floor layer. These states live in
 The renderer expects `stations === bays + 1`. Custom non-uniform station
 locations can be supplied as normalized `stationRatios` from `0` to `1`.
 
+## Geometry core
+
+`src/geometry.mjs` describes a building as a cross-section **profile** extruded
+along its length through numbered **stations**:
+
+- `profiles.aframe({ widthMm, heightMm })` is the section: named corners, the
+  members of one frame, and the outline the end view draws.
+- `extrude(profile, runs, { lengthMm })` is the solid: a frame at every station
+  and a rail along every corner. Separate runs leave a gap, such as the Hall's
+  open passage.
+- `obliqueView(...)` and `projectSolid(...)` give the 3D sketch; `elevation(...)`
+  fits the section into the end view.
+
+The 3D sketch and the end view are drawn from this. The plan and side views
+still work from the dimensions and stations directly. A new building shape
+starts as a new entry in `profiles`.
+
 ## Specification ownership
 
 | Section | Controls |

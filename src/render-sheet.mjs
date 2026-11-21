@@ -1,8 +1,17 @@
+import { elevation, profiles } from "./geometry.mjs";
+
 const DEFAULT_STROKE = "#111111";
 const CONCRETE = "#e5e7e9";
 const WALL = "#eef1f3";
 const WIRE_NEAR = "#8f979d";
 const WIRE_FAR = "#b2b8bc";
+
+// The cross-section a specification asks for. A-frame is the only one so far.
+function sectionProfile(spec) {
+  const kind = spec.structure?.profile ?? "aframe";
+  if (!profiles[kind]) throw new Error(`Unknown section profile: ${kind}`);
+  return profiles[kind]({ widthMm: spec.dimensions.widthMm, heightMm: spec.dimensions.heightMm });
+}
 
 const esc = (value) => String(value)
   .replaceAll("&", "&amp;")
@@ -329,14 +338,14 @@ function renderGable(spec) {
     ? `${spec.anchors.extensionRightLabel} · ${rightRange}`
     : rightRange;
   const anchorBlock = spec.foundation.concreteAnchor;
+  // The end view is the building's cross-section, fitted into this view's box.
+  const section = elevation(sectionProfile(spec), { left, right, top, base });
 
   return `
   <g id="gable-view" aria-label="A-frame gable elevation" transform="translate(0 350)">
     ${svgText(cx, 58, "A-FRAME / TRIANGELFASADE", "view-title", 'text-anchor="middle"')}
-    <polygon class="gable-fill" points="${cx},${top} ${left},${base} ${right},${base}" />
-    <line class="structure-heavy" x1="${cx}" y1="${top}" x2="${left}" y2="${base}" />
-    <line class="structure-heavy" x1="${cx}" y1="${top}" x2="${right}" y2="${base}" />
-    <line class="structure-heavy" x1="${left}" y1="${base}" x2="${right}" y2="${base}" />
+    <polygon class="gable-fill" points="${section.outline.map(([x, y]) => `${x},${y}`).join(" ")}" />
+${section.edges.map(([[x1, y1], [x2, y2]]) => `    <line class="structure-heavy" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`).join("\n")}
     <line class="structure-heavy" x1="${cx - 62}" y1="${beamY}" x2="${cx + 62}" y2="${beamY}" />
     ${doorCenters.map((dc) => `
       <g class="door gable-door" style="--door:${green}">

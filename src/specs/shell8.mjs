@@ -1,37 +1,13 @@
+import { extrude, obliqueView, profiles, projectSolid, stationRun } from "../geometry.mjs";
 import { shell6 } from "./shell6.mjs";
 
 const frameCount = 8;
 const middleAnchorRatio = 3 / 7;
-const frontFrame = {
-  A: [560, 690],
-  B: [605, 725],
-  C: [590, 595]
-};
-const longitudinalOffset = [250, -110];
-const shellNodes = {};
-const shellEdges = [];
-
-for (let index = 0; index < frameCount; index += 1) {
-  const ratio = index / (frameCount - 1);
-  for (const point of ["A", "B", "C"]) {
-    shellNodes[`F${index + 1}${point}`] = [
-      frontFrame[point][0] + longitudinalOffset[0] * ratio,
-      frontFrame[point][1] + longitudinalOffset[1] * ratio
-    ];
-  }
-  shellEdges.push(
-    [`F${index + 1}A`, `F${index + 1}B`, "frame"],
-    [`F${index + 1}B`, `F${index + 1}C`, "frame"],
-    [`F${index + 1}C`, `F${index + 1}A`, "frame"]
-  );
-  if (index > 0) {
-    shellEdges.push(
-      [`F${index}A`, `F${index + 1}A`, "rail"],
-      [`F${index}B`, `F${index + 1}B`, "rail"],
-      [`F${index}C`, `F${index + 1}C`, "rail"]
-    );
-  }
-}
+// The eight-frame closed shell as a solid, seen through the same oblique view as Shell 6.
+const shellProfile = profiles.aframe({ widthMm: shell6.dimensions.widthMm, heightMm: shell6.dimensions.heightMm });
+const shellSolid = extrude(shellProfile, [stationRun("F", frameCount)], { lengthMm: 18900 });
+const shellView = obliqueView({ origin: [560, 690], along: [250, -110], across: [45, 35], up: [7.5, -112.5] });
+const { nodes: shellNodes, edges: shellEdges } = projectSolid(shellSolid, shellView);
 
 const shell8Graph = {
   viewTransform: "translate(0 0)",
