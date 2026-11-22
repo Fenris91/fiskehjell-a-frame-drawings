@@ -335,6 +335,7 @@ export function prismSolid({ footprint, wallHeightMm, roof = { kind: "flat" } })
     return off(a) < 0.01 && off(b) < 0.01;
   });
   const drawn = new Set();
+  const roofFaces = cover.faces.map((face) => face.map(nameOf));
   for (const face of cover.faces) {
     face.forEach((point, index) => {
       const next = face[(index + 1) % face.length];
@@ -347,7 +348,7 @@ export function prismSolid({ footprint, wallHeightMm, roof = { kind: "flat" } })
   }
   footprint.forEach((point, index) => edges.push([`G${index + 1}`, nameOf(point), "wall"]));
   const top = Math.max(...Object.values(nodes).map((node) => node.z));
-  return { ...common, nodes, edges, dims: { lengthMm: extent(footprint.map(([x]) => x)), widthMm: extent(footprint.map(([, y]) => y)), heightMm: top } };
+  return { ...common, nodes, edges, roofFaces, dims: { lengthMm: extent(footprint.map(([x]) => x)), widthMm: extent(footprint.map(([, y]) => y)), heightMm: top } };
 }
 
 // A curve turned about a vertical axis: a dome, a cone, a lavvo. The curve is
@@ -410,4 +411,107 @@ export function convexHull(points) {
     return hull;
   };
   return [...half(sorted), ...half(sorted.reverse())];
+}
+
+// ---------------------------------------------------------------------------
+// Faces: the outside of a solid as flat polygons, for views that hide what is
+// behind (the 3D sketch). Each face has its points as { x, y, z }, the outward
+// normal, a kind (wall, end, roof) and, where it has them, the node names at its
+// corners. Floors are left out: no view looks at a building from below.
+//
+// `overhangMm` lets the roof of a box section run past the walls: past both
+// gable ends, and down its slope past the eaves, as the elevations draw it.
+// ---------------------------------------------------------------------------
+const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+function newell(points) {
+  const normal = { x: 0, y: 0, z: 0 };
+  points.forEach((p, index) => {
+    const q = points[(index + 1) % points.length];
+    normal.x += (p.y - q.y) * (p.z + q.z);
+    normal.y += (p.z - q.z) * (p.x + q.x);
+    normal.z += (p.x - q.x) * (p.y + q.y);
+  });
+  const length = Math.hypot(normal.x, normal.y, normal.z) || 1;
+  return { x: normal.x / length, y: normal.y / length, z: normal.z / length };
+}
+// A face whose normal points the way `outward` says, whatever order its corners came in.
+function face(kind, points, outward, nodes = null) {
+  let normal = newell(points);
+  if (dot(normal, outward) < 0) {
+    points = [...points].reverse();
+    nodes = nodes ? [...nodes].reverse() : null;
+    normal = { x: -normal.x, y: -normal.y, z: -normal.z };
+  }
+  return { kind, points, normal, nodes };
+}
+
+export function solidFaces(solid, { overhangMm = 0 } = {}) {
+  if (solid.kind === "extrusion") {
+    const profile = solid.profile, L = solid.dims.lengthMm;
+    const outline = profile.elevation.outline.map((name) => ({ name, at: profile.vertices[name] }));
+    const middle = outline.reduce(([sy, sz], { at: [y, z] }) => [sy + y / outline.length, sz + z / outline.length], [0, 0]);
+    const eaves = new Set(profile.eaves ?? []);
+    const over = profile.kind === "box" ? overhangMm : 0;
+    const faces = [];
+    outline.forEach((from, index) => {
+      const to = outline[(index + 1) % outline.length];
+      let [y0, z0] = from.at, [y1, z1] = to.at;
+      if (z0 === 0 && z1 === 0) return; // the floor
+      const vertical = Math.abs(y1 - y0) < 1e-6;
+      const kind = vertical ? "wall" : "roof";
+      const outward = { x: 0, y: (y0 + y1) / 2 - middle[0], z: (z0 + z1) / 2 - middle[1] };
+      let x0 = 0, x1 = L;
+      if (kind === "roof" && over > 0) {
+        // Run the roof down its slope past each eave, by the overhang measured flat.
+        const run = Math.abs(y1 - y0), dy = (y1 - y0) / run * over, dz = (z1 - z0) / run * over;
+        if (eaves.has(from.name)) { y0 -= dy; z0 -= dz; }
+        if (eaves.has(to.name)) { y1 += dy; z1 += dz; }
+        x0 = -over; x1 = L + over;
+      }
+      faces.push(face(kind, [{ x: x0, y: y0, z: z0 }, { x: x0, y: y1, z: z1 }, { x: x1, y: y1, z: z1 }, { x: x1, y: y0, z: z0 }], outward));
+    });
+    for (const [x, sign] of [[0, -1], [L, 1]]) {
+      faces.push(face("end", outline.map(({ at: [y, z] }) => ({ x, y, z })), { x: sign, y: 0, z: 0 }));
+    }
+    return faces;
+  }
+  if (solid.kind === "prism") {
+    const faces = [];
+    const tops = Object.entries(solid.nodes).filter(([, node]) => node.z > 0);
+    solid.footprint.forEach((from, index) => {
+      const next = (index + 1) % solid.footprint.length, to = solid.footprint[next];
+      const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+      const along = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+      // Every roof corner on this wall's line, from its far end back to its start.
+      const onWall = tops.filter(([, node]) => Math.abs((node.x - from[0]) * along[1] - (node.y - from[1]) * along[0]) < 0.01)
+        .map(([name, node]) => ({ name, node, t: (node.x - from[0]) * along[0] + (node.y - from[1]) * along[1] }))
+        .filter(({ t }) => t > -0.01 && t < length + 0.01)
+        .sort((a, b) => b.t - a.t);
+      const names = [`G${index + 1}`, `G${next + 1}`, ...onWall.map(({ name }) => name)];
+      faces.push(face("wall", names.map((name) => solid.nodes[name]), { x: along[1], y: -along[0], z: 0 }, names));
+    });
+    const roofs = solid.roofFaces ?? [solid.footprint.map((_, index) => `T${index + 1}`)];
+    for (const names of roofs) faces.push(face("roof", names.map((name) => solid.nodes[name]), { x: 0, y: 0, z: 1 }, names));
+    return faces;
+  }
+  if (solid.kind === "revolved") {
+    const centre = { x: solid.radiusMm, y: solid.radiusMm };
+    const around = Object.keys(solid.nodes).filter((name) => name.startsWith("R0S")).length;
+    const faces = [];
+    for (let ring = 1; ring < solid.curve.length; ring += 1) {
+      for (let step = 0; step < around; step += 1) {
+        const next = (step + 1) % around;
+        const top = solid.curve[ring][0] === 0;
+        const names = top
+          ? [`R${ring - 1}S${step}`, `R${ring - 1}S${next}`, `R${ring}S0`]
+          : [`R${ring - 1}S${step}`, `R${ring - 1}S${next}`, `R${ring}S${next}`, `R${ring}S${step}`];
+        const points = names.map((name) => solid.nodes[name]);
+        const mid = points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, y: sum.y + p.y / points.length }), { x: 0, y: 0 });
+        faces.push(face("wall", points, { x: mid.x - centre.x, y: mid.y - centre.y, z: 0.2 * solid.radiusMm }, names));
+      }
+    }
+    return faces;
+  }
+  throw new Error(`No faces for a ${solid.kind} solid`);
 }

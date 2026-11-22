@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildingModel } from "../src/building.mjs";
 import { buildings, cabin, dome, lavvo, lodge, rack, segmentalHall, shed, taper, wedge } from "../src/buildings/index.mjs";
-import { convexHull, prismSolid, profiles, radiusAt, revolvedSolid, roofOver } from "../src/geometry.mjs";
+import { convexHull, prismSolid, profiles, radiusAt, revolvedSolid, roofOver, solidFaces } from "../src/geometry.mjs";
 import { renderBuildingSheet } from "../src/render-building.mjs";
 
 const clean = (html) => html.replace(/[ \t]+$/gm, "");
@@ -217,4 +217,80 @@ test("audit detail is numbered on the plan and written out in a list", () => {
   for (let i = 0; i < spots.length; i += 1) for (let j = i + 1; j < spots.length; j += 1) {
     assert.ok(Math.hypot(spots[i][0] - spots[j][0], spots[i][1] - spots[j][1]) >= 13, `markers ${i + 1} and ${j + 1} overlap`);
   }
+});
+
+test("an opening on a framed wall must sit in a bay, never across a frame post", () => {
+  // The cabin's first layout: a door across frame 2 and a window across frame 3.
+  const crossing = { ...cabin, openings: [
+    { id: "D1", kind: "door", wall: "near", center: 0.3, widthMm: 900, heightMm: 2100 },
+    { id: "W1", kind: "window", wall: "near", center: 0.72, widthMm: 1500, heightMm: 1200, sillMm: 900 }
+  ] };
+  const found = failed(buildingModel(crossing)).join("\n");
+  assert.match(found, /D1: crosses the frame at x 3000 on near side/);
+  assert.match(found, /W1: crosses the frame at x 6000 on near side/);
+  // Running into a post (within half a wall thickness of the frame) also counts; ending at its face is fine.
+  const touching = { ...cabin, openings: [{ id: "W9", kind: "window", wall: "near", center: (3000 - 50 - 600) / 9000, widthMm: 1200, heightMm: 1200, sillMm: 900 }] };
+  assert.match(failed(buildingModel(touching)).join("\n"), /W9: crosses the frame at x 3000/);
+  const atFace = { ...cabin, openings: [{ id: "W8", kind: "window", wall: "near", center: (3000 - 100 - 600) / 9000, widthMm: 1200, heightMm: 1200, sillMm: 900 }] };
+  assert.deepEqual(failed(buildingModel(atFace)), []);
+  // End walls run across the frames, so they are not checked for it.
+  const model = buildingModel(cabin);
+  assert.ok(model.checks.some((c) => c.ok && /D1: sits in a bay on near side/.test(c.text)));
+  assert.ok(!model.checks.some((c) => /W2: .*bay/.test(c.text)));
+});
+
+test("elevations draw doors and windows with frames, glass, sills and a lever at 1 050 mm", () => {
+  const html = renderBuildingSheet(cabin);
+  const side = html.slice(html.indexOf('id="side-view"'), html.indexOf('id="end-view"'));
+  assert.equal((side.match(/class="glass"/g) || []).length, 2, "W1 and W4, one sash each");
+  assert.equal((side.match(/class="sill-board"/g) || []).length, 2);
+  assert.equal((side.match(/class="leaf"/g) || []).length, 1, "a 1 000 mm door has one leaf");
+  assert.equal((side.match(/class="handle-lever"/g) || []).length, 1);
+  const wide = renderBuildingSheet({ ...cabin, openings: [{ id: "D9", kind: "door", wall: "near", center: 0.5, widthMm: 1600, heightMm: 2100 }, { id: "W9", kind: "window", wall: "far", center: 0.5, widthMm: 1800, heightMm: 1200, sillMm: 900 }] });
+  const wideSide = wide.slice(wide.indexOf('id="side-view"'), wide.indexOf('id="end-view"'));
+  assert.equal((wideSide.match(/class="leaf"/g) || []).length, 2, "a 1 600 mm door is a pair of leaves");
+});
+
+test("faces of a solid point outward, and a box roof runs past the walls by its overhang", () => {
+  const model = buildingModel(cabin);
+  const faces = solidFaces(model.solid, { overhangMm: 400 });
+  assert.deepEqual(faces.map((face) => face.kind).sort(), ["end", "end", "roof", "roof", "wall", "wall"]);
+  const centre = { x: 4500, y: 3000, z: 1500 };
+  for (const face of faces) {
+    const mid = face.points.reduce((sum, p) => ({ x: sum.x + p.x / face.points.length, y: sum.y + p.y / face.points.length, z: sum.z + p.z / face.points.length }), { x: 0, y: 0, z: 0 });
+    assert.ok((mid.x - centre.x) * face.normal.x + (mid.y - centre.y) * face.normal.y + (mid.z - centre.z) * face.normal.z > 0, `${face.kind} faces outward`);
+  }
+  const roof = faces.filter((face) => face.kind === "roof").flatMap((face) => face.points);
+  assert.deepEqual([Math.min(...roof.map((p) => p.x)), Math.max(...roof.map((p) => p.x))], [-400, 9400]);
+  assert.deepEqual([Math.min(...roof.map((p) => p.y)), Math.max(...roof.map((p) => p.y))], [-400, 6400]);
+  // The eave drops down the slope: 400 mm flat at a rise of 1 500 over 3 000.
+  assert.equal(Math.min(...roof.map((p) => p.z)), 2200);
+  for (const solid of [buildingModel(lodge).solid, buildingModel(dome).solid]) {
+    for (const face of solidFaces(solid)) assert.ok(Number.isFinite(face.normal.x) && face.points.length >= 3, solid.kind);
+  }
+});
+
+test("the 3D sketch shows the near side and start end, and only the openings on them", () => {
+  const html = renderBuildingSheet(cabin);
+  const sketch = html.slice(html.indexOf('<g id="sketch-view"'), html.indexOf("</g>\n", html.indexOf('<g id="sketch-view"')));
+  const shown = [...sketch.matchAll(/data-opening="([^"]+)"/g)].map(([, id]) => id).sort();
+  // W1, D1, W4 on the near side and W2 on the start end face the viewer; W3 (far
+  // side) and D2 (end) are behind the building and must not show through.
+  assert.deepEqual(shown, ["D1", "W1", "W2", "W4"]);
+  // Doors and windows are drawn as in the elevations, not as flat boxes.
+  assert.ok(sketch.includes('class="leaf"') && sketch.includes('class="glass"'));
+});
+
+test("the side and end elevations put the eaves where the 3D sketch does", () => {
+  const html = renderBuildingSheet(cabin);
+  const view = (id) => html.slice(html.indexOf(`<g id="${id}"`), html.indexOf("</g>\n", html.indexOf(`<g id="${id}"`)));
+  const ys = (list) => list.trim().split(" ").map((pair) => Number(pair.split(",")[1]));
+  const band = ys(view("side-view").match(/<polygon class="roof" points="([^"]+)"/)[1]);
+  const edge = ys(view("end-view").match(/<polyline class="roof-edge-heavy" points="([^"]+)"/)[1]);
+  // The levels on the side elevation: ground, wall top (+2.400) and ridge.
+  const [ground, wallTop] = [...html.matchAll(/class="level-line" x1="[^"]+" y1="([^"]+)"/g)].map(([, y]) => Number(y));
+  // A 400 mm overhang measured flat drops the eave 200 mm down a 1 500 / 3 000 slope.
+  const eave = ground - (ground - wallTop) * 2200 / 2400;
+  assert.ok(Math.abs(Math.max(...band) - eave) < 0.2, `side elevation eave at ${Math.max(...band)}, expected ${eave}`);
+  assert.ok(Math.abs(edge[0] - eave) < 0.2 && Math.abs(edge.at(-1) - eave) < 0.2, `end elevation eaves at ${edge[0]} and ${edge.at(-1)}, expected ${eave}`);
 });

@@ -2,7 +2,7 @@
 // and end elevations at one shared scale, a 3D sketch, schedules, and an audit
 // layer that can be switched on over the same drawing.
 import { buildingModel } from "./building.mjs";
-import { convexHull } from "./geometry.mjs";
+import { convexHull, solidFaces } from "./geometry.mjs";
 
 const INK = "#111111";
 const WALL = "#eef1f3";
@@ -44,6 +44,47 @@ function inset(polygon, distance) {
     const t = ((current.point[0] - previous.point[0]) * current.along[1] - (current.point[1] - previous.point[1]) * current.along[0]) / cross;
     return [previous.point[0] + previous.along[0] * t, previous.point[1] + previous.along[1] * t];
   });
+}
+
+// A door or window as seen in an elevation, drawn in the opening's own
+// coordinates so it follows the wall on angled and curved views too: u runs
+// across the opening (0 to 1), v up from the sill (0 to 1). Sizes are in mm.
+const FRAME_MM = 70; // door and window frame (karm) seen face on
+const SASH_MM = 50; // window sash (ramme) inside the frame
+function openingElevation(opening, quad) {
+  const [a, b, c, d] = quad;
+  const at = (u, v) => [a[0] + (b[0] - a[0]) * u + (d[0] - a[0]) * v + (c[0] - b[0] - d[0] + a[0]) * u * v,
+    a[1] + (b[1] - a[1]) * u + (d[1] - a[1]) * v + (c[1] - b[1] - d[1] + a[1]) * u * v];
+  const W = opening.widthMm, H = opening.heightMm;
+  const box = (x0, y0, x1, y1, className) => `<polygon class="${className}" points="${points([at(x0 / W, y0 / H), at(x1 / W, y0 / H), at(x1 / W, y1 / H), at(x0 / W, y1 / H)])}" />`;
+  const frame = box(0, 0, W, H, "opening");
+  if (opening.kind === "door") {
+    // A single leaf up to 1 200 mm, a pair of leaves above it. The lever sits at
+    // 1 050 mm on the latch side, away from the hinges.
+    const leaves = W > 1200 ? 2 : 1, leafW = (W - 2 * FRAME_MM) / leaves;
+    const parts = [frame];
+    for (let i = 0; i < leaves; i += 1) {
+      const x0 = FRAME_MM + i * leafW, x1 = x0 + leafW;
+      parts.push(box(x0, 0, x1, H - FRAME_MM, "leaf"));
+      parts.push(box(x0 + leafW * 0.18, H * 0.56, x1 - leafW * 0.18, H - FRAME_MM - 180, "leaf-panel"));
+      parts.push(box(x0 + leafW * 0.18, 220, x1 - leafW * 0.18, H * 0.46, "leaf-panel"));
+      const latch = leaves === 2 ? (i === 0 ? x1 - 70 : x0 + 70) : x1 - 90;
+      const lever = leaves === 2 ? (i === 0 ? -130 : 130) : -130;
+      parts.push(line(at(latch / W, 1050 / H), at((latch + lever) / W, 1050 / H), "handle-lever"));
+    }
+    parts.push(line(at(-60 / W, 0), at((W + 60) / W, 0), "threshold"));
+    return parts.join("");
+  }
+  // Windows: one sash up to 1 300 mm wide, two above it; a sill that projects.
+  const sashes = W > 1300 ? 2 : 1, inner = W - 2 * FRAME_MM, sashW = inner / sashes;
+  const parts = [frame];
+  for (let i = 0; i < sashes; i += 1) {
+    const x0 = FRAME_MM + i * sashW, x1 = x0 + sashW;
+    parts.push(box(x0, FRAME_MM, x1, H - FRAME_MM, "sash"));
+    parts.push(box(x0 + SASH_MM, FRAME_MM + SASH_MM, x1 - SASH_MM, H - FRAME_MM - SASH_MM, "glass"));
+  }
+  parts.push(box(-60, -45, W + 60, 0, "sill-board"));
+  return parts.join("");
 }
 
 export function renderBuildingSheet(spec, { audit = false } = {}) {
@@ -153,11 +194,8 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
       .map(([from, to, kind]) => line(place(solid.nodes[from]), place(solid.nodes[to]), edgeClass(kind)));
     const seen = openings.filter((opening) => facing(opening.normal) > 0.3).map((opening) => {
       const quad = opening.quad.map((corner) => place(corner));
-      const middleX = (quad[0][0] + quad[1][0]) / 2, middleY = (quad[0][1] + quad[3][1]) / 2;
-      const detail = opening.kind === "door"
-        ? `${line([middleX, quad[3][1]], [middleX, quad[0][1]], "opening-bar light")}<circle class="handle" cx="${n(quad[1][0] - (quad[1][0] - quad[0][0]) * 0.18)}" cy="${n(middleY + 4)}" r="1.4" />`
-        : `${line([middleX, quad[3][1]], [middleX, quad[0][1]], "opening-bar")}${line([quad[0][0], middleY], [quad[1][0], middleY], "opening-bar")}${line([quad[0][0] - 3, quad[0][1]], [quad[1][0] + 3, quad[1][1]], "sill")}`;
-      return `<g data-opening="${esc(opening.id)}"><polygon class="opening" points="${points(quad)}" />${detail}${text(middleX, quad[3][1] - 4, opening.id, "tag", 'text-anchor="middle"')}</g>`;
+      const middleX = (quad[0][0] + quad[1][0]) / 2;
+      return `<g data-opening="${esc(opening.id)}">${openingElevation(opening, quad)}${text(middleX, quad[3][1] - 4, opening.id, "tag", 'text-anchor="middle"')}</g>`;
     });
     const struts = braces.filter((brace) => depth(brace.from) <= 1 && depth(brace.to) <= 1 && (brace.station !== undefined ? id === "end-view" : facing(walls.find((wall) => wall.id === brace.wall)?.normal ?? [0, 0]) > 0.3))
       .map((brace) => {
@@ -184,12 +222,15 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     ${dimensionH(left, right, ground + 30, `${mm(across.widthMm)} mm`)}
   </g>`;
   }
-  // The roof of a box building, drawn over its walls with its overhang.
+  // The roof of a box building, drawn over its walls with its overhang. Both
+  // elevations use the roof faces the 3D sketch draws, so all three views put the
+  // eaves in the same place: the overhang is measured flat, as on the plan.
+  const roofPoints = box ? solidFaces(solid, { overhangMm: over }).filter((face) => face.kind === "roof").flatMap((face) => face.points) : [];
   function roofFor(id, place) {
     if (!box) return "";
-    const top = box.heightMm, eaveNear = box.vertices.E[1], eaveFar = box.vertices.D[1];
     if (id === "side-view") {
-      const low = Math.min(eaveNear, eaveFar), high = box.roof.kind === "flat" ? top + 120 : top;
+      const zs = roofPoints.map((p) => p.z);
+      const low = Math.min(...zs), high = box.roof.kind === "flat" ? box.heightMm + 120 : Math.max(...zs);
       const band = [place({ x: -over, y: 0, z: low }), place({ x: L + over, y: 0, z: low }), place({ x: L + over, y: 0, z: high }), place({ x: -over, y: 0, z: high })];
       const lines = box.roof.kind === "flat" ? "" : Array.from({ length: Math.max(0, Math.floor((high - low) / 300)) }, (_, index) => {
         const z = low + (index + 1) * 300;
@@ -197,14 +238,11 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
       }).join("");
       return `<polygon class="roof" points="${points(band)}" />${lines}`;
     }
-    // End view: the roof line runs past the walls by the overhang, along its slope.
-    const slope = (from, to, extend) => {
-      const length = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1;
-      return [from[0] + (from[0] - to[0]) / length * extend, from[1] + (from[1] - to[1]) / length * extend];
-    };
-    const E = box.vertices.E, D = box.vertices.D, C = box.ridge ? box.vertices.C : null;
-    const path = C ? [slope(E, C, over), C, slope(D, C, over)] : [slope(E, D, over), slope(D, E, over)];
-    return `<polyline class="roof-edge-heavy" points="${points(path.map(([y, z]) => place({ x: 0, y, z })))}" />`;
+    // End view: the roof's edge at the start gable, eave to ridge to eave.
+    const seen = new Map();
+    for (const p of roofPoints) if (Math.abs(p.x + over) < 1e-6) seen.set(`${Math.round(p.y * 100)}:${Math.round(p.z * 100)}`, p);
+    const path = [...seen.values()].sort((a, b) => a.y - b.y);
+    return `<polyline class="roof-edge-heavy" points="${points(path.map((p) => place({ x: 0, y: p.y, z: p.z })))}" />`;
   }
   // Horizontal boards on the vertical walls of a box or footprint building.
   function cladding(id, place) {
@@ -229,18 +267,73 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
   const heightDimension = dimensionV(frontLeft + W * scale + 30, ground - H * scale, ground, `${mm(H)} mm`);
 
   // ---- 3D sketch ----------------------------------------------------------------
-  const oblique = (p) => [p.x * 0.9 + p.y * 0.3, -p.x * 0.38 + p.y * 0.24 - p.z];
-  const sketchBox = { x: 690, y: 110, w: 250, h: 280 };
-  const flatSketch = nodes.map(oblique);
+  // The solid seen from the near-left corner of the plan, above, in true
+  // proportions (an axonometric view, no perspective): the same near side as
+  // the side elevation and the same start end as the end elevation. Faces turned
+  // away are left out and nearer faces cover further ones, so an opening only
+  // shows on the wall it is in, drawn as in the elevations.
+  const azimuth = 36 * Math.PI / 180, tilt = 20 * Math.PI / 180;
+  const right = { x: Math.cos(azimuth), y: -Math.sin(azimuth), z: 0 };
+  const up = { x: Math.sin(azimuth) * Math.sin(tilt), y: Math.cos(azimuth) * Math.sin(tilt), z: Math.cos(tilt) };
+  const into = { x: Math.sin(azimuth) * Math.cos(tilt), y: Math.cos(azimuth) * Math.cos(tilt), z: -Math.sin(tilt) };
+  const dot3 = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  const faces = solidFaces(solid, { overhangMm: over }).filter((face) => dot3(face.normal, into) < -1e-9);
+  const depthOf = (face) => face.points.reduce((sum, p) => sum + dot3(p, into), 0) / face.points.length;
+  // A box, arch or A-frame is convex, so its walls never hide each other; only a
+  // roof that overhangs reaches over them. A footprint can have notches, so its
+  // faces go from the furthest to the nearest.
+  faces.sort(solid.kind === "extrusion"
+    ? (a, b) => (a.kind === "roof") - (b.kind === "roof")
+    : (a, b) => depthOf(b) - depthOf(a));
+  const flatSketch = faces.flatMap((face) => face.points).map((p) => [dot3(p, right), -dot3(p, up)]);
   const sx = flatSketch.map(([x]) => x), sy = flatSketch.map(([, y]) => y);
-  const sketchScale = Math.min(sketchBox.w / (Math.max(...sx) - Math.min(...sx)), sketchBox.h / (Math.max(...sy) - Math.min(...sy)));
-  const K = (p) => { const [x, y] = oblique(p); return [sketchBox.x + (sketchBox.w - (Math.max(...sx) - Math.min(...sx)) * sketchScale) / 2 + (x - Math.min(...sx)) * sketchScale, sketchBox.y + (sketchBox.h - (Math.max(...sy) - Math.min(...sy)) * sketchScale) / 2 + (y - Math.min(...sy)) * sketchScale]; };
+  const sketchBox = { x: 690, y: 110, w: 250, h: 280 };
+  const spanX = Math.max(...sx) - Math.min(...sx), spanY = Math.max(...sy) - Math.min(...sy);
+  const sketchScale = Math.min(sketchBox.w / spanX, sketchBox.h / spanY);
+  const K = (p) => [
+    sketchBox.x + (sketchBox.w - spanX * sketchScale) / 2 + (dot3(p, right) - Math.min(...sx)) * sketchScale,
+    sketchBox.y + (sketchBox.h - spanY * sketchScale) / 2 + (-dot3(p, up) - Math.min(...sy)) * sketchScale
+  ];
+  const onFace = (face, p) => Math.abs(dot3(face.normal, { x: p.x - face.points[0].x, y: p.y - face.points[0].y, z: p.z - face.points[0].z })) < 1;
+  // Where a plane (one coordinate held at a value) cuts a face: a segment, or nothing.
+  const cut = (face, axis, value) => {
+    const hits = [];
+    face.points.forEach((p, index) => {
+      const q = face.points[(index + 1) % face.points.length];
+      const a = p[axis] - value, b = q[axis] - value;
+      if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
+        const t = a / (a - b);
+        hits.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, z: p.z + (q.z - p.z) * t });
+      }
+    });
+    return hits.length === 2 ? line(K(hits[0]), K(hits[1]), axis === "z" ? "cladding" : "sketch-frame") : "";
+  };
+  const claddingTop = box ? Math.min(box.vertices.E[1], box.vertices.D[1]) : solid.kind === "prism" ? solid.wallHeightMm : 0;
+  const innerStations = (solid.stations ?? []).slice(1, -1);
+  const drawnOpenings = new Set();
+  const sketchOpening = (opening) => {
+    drawnOpenings.add(opening);
+    const quad = opening.quad.map(K);
+    return `<g data-opening="${esc(opening.id)}">${openingElevation(opening, quad)}</g>`;
+  };
+  const sketchFaces = faces.map((face) => {
+    const vertical = Math.abs(face.normal.z) < 1e-6;
+    const boards = claddingTop && vertical ? Array.from({ length: Math.floor(claddingTop / 400) }, (_, index) => (index + 1) * 400 < claddingTop ? cut(face, "z", (index + 1) * 400) : "").join("") : "";
+    const frames = face.kind === "end" ? "" : innerStations.map((station) => cut(face, "x", station.x)).join("");
+    // A round building's facets are drawn without seams; its ribs and rings go on top.
+    const seams = solid.kind === "revolved" ? solid.edges.filter(([from, to]) => face.nodes.includes(from) && face.nodes.includes(to))
+      .map(([from, to, kind]) => line(K(solid.nodes[from]), K(solid.nodes[to]), edgeClass(kind))).join("") : "";
+    const here = solid.kind === "revolved" ? [] : openings.filter((opening) => !drawnOpenings.has(opening) && opening.quad.every((corner) => onFace(face, corner)));
+    const struts = braces.filter((brace) => onFace(face, brace.from) && onFace(face, brace.to)).map((brace) => line(K(brace.from), K(brace.to), "brace"));
+    return `<polygon class="sketch-face sketch-${face.kind}${solid.kind === "revolved" ? " seamless" : ""}" points="${points(face.points.map(K))}" />${boards}${frames}${seams}${here.map(sketchOpening).join("")}${struts.join("")}`;
+  });
+  // On a round building an opening follows the curve; show the ones facing the viewer.
+  const roundOpenings = solid.kind === "revolved"
+    ? openings.filter((opening) => opening.normal[0] * into.x + opening.normal[1] * into.y < -0.15).map(sketchOpening) : [];
   const sketch = `
   <g id="sketch-view" aria-label="Three-dimensional sketch">
     ${text(sketchBox.x, 84, "3D SKETCH / 3D-SKISSE", "view-title")}
-    ${solid.edges.map(([from, to, kind]) => line(K(solid.nodes[from]), K(solid.nodes[to]), edgeClass(kind))).join("")}
-    ${openings.map((opening) => `<polygon class="opening sketch-opening" data-opening="${esc(opening.id)}" points="${points(opening.quad.map(K))}" />`).join("")}
-    ${braces.map((brace) => line(K(brace.from), K(brace.to), "brace")).join("")}
+    ${sketchFaces.join("")}${roundOpenings.join("")}
   </g>`;
 
   // ---- Schedules ------------------------------------------------------------------
@@ -398,11 +491,21 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
     .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
     .opening { fill: #ffffff; stroke: ${OPENING}; stroke-width: 1.3; }
-    .sketch-opening { fill: #dbe7f5; }
+    .sketch-face { fill: ${WALL}; stroke: ${INK}; stroke-width: 1.1; stroke-linejoin: round; }
+    .sketch-roof { fill: ${ROOF}; }
+    .sketch-face.seamless { stroke: ${WALL}; stroke-width: 0.6; }
+    .sketch-frame { stroke: ${INK}; stroke-width: 0.6; }
     .opening-bar { stroke: ${OPENING}; stroke-width: 0.8; }
     .opening-bar.light { stroke-dasharray: 3 2; }
     .handle { fill: ${OPENING}; }
     .sill { stroke: ${OPENING}; stroke-width: 1.6; }
+    .leaf { fill: #f3f5f7; stroke: ${OPENING}; stroke-width: 0.8; }
+    .leaf-panel { fill: none; stroke: ${OPENING}; stroke-width: 0.5; }
+    .sash { fill: #ffffff; stroke: ${OPENING}; stroke-width: 0.7; }
+    .glass { fill: #dbe7f5; stroke: ${OPENING}; stroke-width: 0.5; }
+    .sill-board { fill: #ffffff; stroke: ${OPENING}; stroke-width: 0.9; }
+    .handle-lever { stroke: ${INK}; stroke-width: 1.6; stroke-linecap: round; }
+    .threshold { stroke: ${INK}; stroke-width: 1.4; }
     .brace { stroke: #6b7279; stroke-width: 2.6; stroke-linecap: round; }
     .ground { stroke: ${INK}; stroke-width: 1.8; }
     .ground-hatch { stroke: ${INK}; stroke-width: 0.5; }
