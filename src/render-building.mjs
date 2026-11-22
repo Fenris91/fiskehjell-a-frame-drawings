@@ -2,7 +2,7 @@
 // and end elevations at one shared scale, a 3D sketch, schedules, and an audit
 // layer that can be switched on over the same drawing.
 import { buildingModel } from "./building.mjs";
-import { convexHull } from "./geometry.mjs";
+import { convexHull, solidFaces } from "./geometry.mjs";
 
 const INK = "#111111";
 const WALL = "#eef1f3";
@@ -267,18 +267,73 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
   const heightDimension = dimensionV(frontLeft + W * scale + 30, ground - H * scale, ground, `${mm(H)} mm`);
 
   // ---- 3D sketch ----------------------------------------------------------------
-  const oblique = (p) => [p.x * 0.9 + p.y * 0.3, -p.x * 0.38 + p.y * 0.24 - p.z];
-  const sketchBox = { x: 690, y: 110, w: 250, h: 280 };
-  const flatSketch = nodes.map(oblique);
+  // The solid seen from the near-left corner of the plan, above, in true
+  // proportions (an axonometric view, no perspective): the same near side as
+  // the side elevation and the same start end as the end elevation. Faces turned
+  // away are left out and nearer faces cover further ones, so an opening only
+  // shows on the wall it is in, drawn as in the elevations.
+  const azimuth = 36 * Math.PI / 180, tilt = 20 * Math.PI / 180;
+  const right = { x: Math.cos(azimuth), y: -Math.sin(azimuth), z: 0 };
+  const up = { x: Math.sin(azimuth) * Math.sin(tilt), y: Math.cos(azimuth) * Math.sin(tilt), z: Math.cos(tilt) };
+  const into = { x: Math.sin(azimuth) * Math.cos(tilt), y: Math.cos(azimuth) * Math.cos(tilt), z: -Math.sin(tilt) };
+  const dot3 = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  const faces = solidFaces(solid, { overhangMm: over }).filter((face) => dot3(face.normal, into) < -1e-9);
+  const depthOf = (face) => face.points.reduce((sum, p) => sum + dot3(p, into), 0) / face.points.length;
+  // A box, arch or A-frame is convex, so its walls never hide each other; only a
+  // roof that overhangs reaches over them. A footprint can have notches, so its
+  // faces go from the furthest to the nearest.
+  faces.sort(solid.kind === "extrusion"
+    ? (a, b) => (a.kind === "roof") - (b.kind === "roof")
+    : (a, b) => depthOf(b) - depthOf(a));
+  const flatSketch = faces.flatMap((face) => face.points).map((p) => [dot3(p, right), -dot3(p, up)]);
   const sx = flatSketch.map(([x]) => x), sy = flatSketch.map(([, y]) => y);
-  const sketchScale = Math.min(sketchBox.w / (Math.max(...sx) - Math.min(...sx)), sketchBox.h / (Math.max(...sy) - Math.min(...sy)));
-  const K = (p) => { const [x, y] = oblique(p); return [sketchBox.x + (sketchBox.w - (Math.max(...sx) - Math.min(...sx)) * sketchScale) / 2 + (x - Math.min(...sx)) * sketchScale, sketchBox.y + (sketchBox.h - (Math.max(...sy) - Math.min(...sy)) * sketchScale) / 2 + (y - Math.min(...sy)) * sketchScale]; };
+  const sketchBox = { x: 690, y: 110, w: 250, h: 280 };
+  const spanX = Math.max(...sx) - Math.min(...sx), spanY = Math.max(...sy) - Math.min(...sy);
+  const sketchScale = Math.min(sketchBox.w / spanX, sketchBox.h / spanY);
+  const K = (p) => [
+    sketchBox.x + (sketchBox.w - spanX * sketchScale) / 2 + (dot3(p, right) - Math.min(...sx)) * sketchScale,
+    sketchBox.y + (sketchBox.h - spanY * sketchScale) / 2 + (-dot3(p, up) - Math.min(...sy)) * sketchScale
+  ];
+  const onFace = (face, p) => Math.abs(dot3(face.normal, { x: p.x - face.points[0].x, y: p.y - face.points[0].y, z: p.z - face.points[0].z })) < 1;
+  // Where a plane (one coordinate held at a value) cuts a face: a segment, or nothing.
+  const cut = (face, axis, value) => {
+    const hits = [];
+    face.points.forEach((p, index) => {
+      const q = face.points[(index + 1) % face.points.length];
+      const a = p[axis] - value, b = q[axis] - value;
+      if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
+        const t = a / (a - b);
+        hits.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, z: p.z + (q.z - p.z) * t });
+      }
+    });
+    return hits.length === 2 ? line(K(hits[0]), K(hits[1]), axis === "z" ? "cladding" : "sketch-frame") : "";
+  };
+  const claddingTop = box ? Math.min(box.vertices.E[1], box.vertices.D[1]) : solid.kind === "prism" ? solid.wallHeightMm : 0;
+  const innerStations = (solid.stations ?? []).slice(1, -1);
+  const drawnOpenings = new Set();
+  const sketchOpening = (opening) => {
+    drawnOpenings.add(opening);
+    const quad = opening.quad.map(K);
+    return `<g data-opening="${esc(opening.id)}">${openingElevation(opening, quad)}</g>`;
+  };
+  const sketchFaces = faces.map((face) => {
+    const vertical = Math.abs(face.normal.z) < 1e-6;
+    const boards = claddingTop && vertical ? Array.from({ length: Math.floor(claddingTop / 400) }, (_, index) => (index + 1) * 400 < claddingTop ? cut(face, "z", (index + 1) * 400) : "").join("") : "";
+    const frames = face.kind === "end" ? "" : innerStations.map((station) => cut(face, "x", station.x)).join("");
+    // A round building's facets are drawn without seams; its ribs and rings go on top.
+    const seams = solid.kind === "revolved" ? solid.edges.filter(([from, to]) => face.nodes.includes(from) && face.nodes.includes(to))
+      .map(([from, to, kind]) => line(K(solid.nodes[from]), K(solid.nodes[to]), edgeClass(kind))).join("") : "";
+    const here = solid.kind === "revolved" ? [] : openings.filter((opening) => !drawnOpenings.has(opening) && opening.quad.every((corner) => onFace(face, corner)));
+    const struts = braces.filter((brace) => onFace(face, brace.from) && onFace(face, brace.to)).map((brace) => line(K(brace.from), K(brace.to), "brace"));
+    return `<polygon class="sketch-face sketch-${face.kind}${solid.kind === "revolved" ? " seamless" : ""}" points="${points(face.points.map(K))}" />${boards}${frames}${seams}${here.map(sketchOpening).join("")}${struts.join("")}`;
+  });
+  // On a round building an opening follows the curve; show the ones facing the viewer.
+  const roundOpenings = solid.kind === "revolved"
+    ? openings.filter((opening) => opening.normal[0] * into.x + opening.normal[1] * into.y < -0.15).map(sketchOpening) : [];
   const sketch = `
   <g id="sketch-view" aria-label="Three-dimensional sketch">
     ${text(sketchBox.x, 84, "3D SKETCH / 3D-SKISSE", "view-title")}
-    ${solid.edges.map(([from, to, kind]) => line(K(solid.nodes[from]), K(solid.nodes[to]), edgeClass(kind))).join("")}
-    ${openings.map((opening) => `<polygon class="opening sketch-opening" data-opening="${esc(opening.id)}" points="${points(opening.quad.map(K))}" />`).join("")}
-    ${braces.map((brace) => line(K(brace.from), K(brace.to), "brace")).join("")}
+    ${sketchFaces.join("")}${roundOpenings.join("")}
   </g>`;
 
   // ---- Schedules ------------------------------------------------------------------
@@ -436,7 +491,10 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
     .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
     .opening { fill: #ffffff; stroke: ${OPENING}; stroke-width: 1.3; }
-    .sketch-opening { fill: #dbe7f5; }
+    .sketch-face { fill: ${WALL}; stroke: ${INK}; stroke-width: 1.1; stroke-linejoin: round; }
+    .sketch-roof { fill: ${ROOF}; }
+    .sketch-face.seamless { stroke: ${WALL}; stroke-width: 0.6; }
+    .sketch-frame { stroke: ${INK}; stroke-width: 0.6; }
     .opening-bar { stroke: ${OPENING}; stroke-width: 0.8; }
     .opening-bar.light { stroke-dasharray: 3 2; }
     .handle { fill: ${OPENING}; }

@@ -44,7 +44,10 @@
     .edge-sill, .edge-rail, .edge-ridge { stroke-width: 1.6; }
     .edge-ring, .edge.light { stroke: #7a8088; stroke-width: 0.6; }
     .opening { fill: #ffffff; stroke: #1f4f8f; stroke-width: 1.3; }
-    .sketch-opening { fill: #dbe7f5; }
+    .sketch-face { fill: #eef1f3; stroke: #111111; stroke-width: 1.1; stroke-linejoin: round; }
+    .sketch-roof { fill: #dfe3e6; }
+    .sketch-face.seamless { stroke: #eef1f3; stroke-width: 0.6; }
+    .sketch-frame { stroke: #111111; stroke-width: 0.6; }
     .opening-bar { stroke: #1f4f8f; stroke-width: 0.8; }
     .opening-bar.light { stroke-dasharray: 3 2; }
     .handle { fill: #1f4f8f; }
@@ -107,9 +110,7 @@
 
   <g id="sketch-view" aria-label="Three-dimensional sketch">
     <text x="690" y="84" class="view-title">3D SKETCH / 3D-SKISSE</text>
-    <line class="edge edge-sill" x1="690" y1="323.2" x2="898.3" y2="228" /><line class="edge edge-sill" x1="898.3" y1="228" x2="940" y2="261.3" /><line class="edge edge-sill" x1="940" y1="261.3" x2="719.8" y2="347" /><line class="edge edge-sill" x1="719.8" y1="347" x2="690" y2="323.2" /><line class="edge edge-roof" x1="690" y1="260.2" x2="898.3" y2="176.4" /><line class="edge edge-roof" x1="898.3" y1="176.4" x2="919.2" y2="153" /><line class="edge edge-ridge" x1="919.2" y1="153" x2="704.9" y2="243.4" /><line class="edge edge-roof" x1="704.9" y1="243.4" x2="690" y2="260.2" /><line class="edge edge-roof" x1="919.2" y1="153" x2="940" y2="209.7" /><line class="edge edge-roof" x1="940" y1="209.7" x2="719.8" y2="284" /><line class="edge edge-roof" x1="719.8" y1="284" x2="704.9" y2="243.4" /><line class="edge edge-wall" x1="690" y1="323.2" x2="690" y2="260.2" /><line class="edge edge-wall" x1="898.3" y1="228" x2="898.3" y2="176.4" /><line class="edge edge-wall" x1="940" y1="261.3" x2="940" y2="209.7" /><line class="edge edge-wall" x1="719.8" y1="347" x2="719.8" y2="284" />
-    <polygon class="opening sketch-opening" data-opening="D1" points="708.5,338 701.3,332.3 701.3,288.6 708.5,294.3" /><polygon class="opening sketch-opening" data-opening="W1" points="912,227 926.3,238.5 926.3,186.9 912,175.4" /><polygon class="opening sketch-opening" data-opening="W2" points="747.3,277.2 778.5,262.9 778.5,241.1 747.3,255.3" />
-
+    <polygon class="sketch-face sketch-roof" points="745.5,263.9 940,233.8 901.1,179.7 717.8,225.2" /><polygon class="sketch-face sketch-wall" points="745.5,320.3 940,280 940,233.8 745.5,263.9" /><line class="cladding" x1="940" y1="272.9" x2="745.5" y2="313.2" /><line class="cladding" x1="940" y1="265.8" x2="745.5" y2="306.1" /><line class="cladding" x1="940" y1="258.7" x2="745.5" y2="299" /><line class="cladding" x1="940" y1="251.6" x2="745.5" y2="291.9" /><line class="cladding" x1="940" y1="244.5" x2="745.5" y2="284.8" /><line class="cladding" x1="940" y1="237.4" x2="745.5" y2="277.7" /><g data-opening="W2"><polygon class="opening" points="799,291.5 828.1,285.4 828.1,265.9 799,271.9" /><polygon class="sash" points="800.2,290 813.6,287.2 813.6,270.2 800.2,273" /><polygon class="glass" points="801,288.9 812.8,286.5 812.8,271.2 801,273.7" /><polygon class="sash" points="813.6,287.2 827,284.4 827,267.4 813.6,270.2" /><polygon class="glass" points="814.4,286.2 826.2,283.7 826.2,268.4 814.4,270.9" /><polygon class="sill-board" points="798.1,292.5 829.1,286 829.1,285.2 798.1,291.7" /></g><polygon class="sketch-face sketch-wall" points="690,294.2 745.5,320.3 745.5,263.9 717.8,225.2 690,237.8" /><line class="cladding" x1="745.5" y1="313.2" x2="690" y2="287.1" /><line class="cladding" x1="745.5" y1="306.1" x2="690" y2="280" /><line class="cladding" x1="745.5" y1="299" x2="690" y2="272.9" /><line class="cladding" x1="745.5" y1="291.9" x2="690" y2="265.8" /><line class="cladding" x1="745.5" y1="284.8" x2="690" y2="258.7" /><line class="cladding" x1="745.5" y1="277.7" x2="690" y2="251.6" /><g data-opening="D1"><polygon class="opening" points="711.1,304.1 724.4,310.4 724.4,271.3 711.1,265.1" /><polygon class="leaf" points="711.9,304.5 723.6,310 723.6,272.2 711.9,266.7" /><polygon class="leaf-panel" points="714,283.6 721.5,287.2 721.5,274.4 714,270.9" /><polygon class="leaf-panel" points="714,301.6 721.5,305.1 721.5,291.1 714,287.5" /><line class="handle-lever" x1="722.6" y1="290.9" x2="721.2" y2="290.2" /><line class="threshold" x1="710.4" y1="303.8" x2="725.1" y2="310.7" /></g>
   </g>
 
   <g id="side-view" aria-label="Side elevation">

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildingModel } from "../src/building.mjs";
 import { buildings, cabin, dome, lavvo, lodge, rack, segmentalHall, shed, taper, wedge } from "../src/buildings/index.mjs";
-import { convexHull, prismSolid, profiles, radiusAt, revolvedSolid, roofOver } from "../src/geometry.mjs";
+import { convexHull, prismSolid, profiles, radiusAt, revolvedSolid, roofOver, solidFaces } from "../src/geometry.mjs";
 import { renderBuildingSheet } from "../src/render-building.mjs";
 
 const clean = (html) => html.replace(/[ \t]+$/gm, "");
@@ -249,4 +249,34 @@ test("elevations draw doors and windows with frames, glass, sills and a lever at
   const wide = renderBuildingSheet({ ...cabin, openings: [{ id: "D9", kind: "door", wall: "near", center: 0.5, widthMm: 1600, heightMm: 2100 }, { id: "W9", kind: "window", wall: "far", center: 0.5, widthMm: 1800, heightMm: 1200, sillMm: 900 }] });
   const wideSide = wide.slice(wide.indexOf('id="side-view"'), wide.indexOf('id="end-view"'));
   assert.equal((wideSide.match(/class="leaf"/g) || []).length, 2, "a 1 600 mm door is a pair of leaves");
+});
+
+test("faces of a solid point outward, and a box roof runs past the walls by its overhang", () => {
+  const model = buildingModel(cabin);
+  const faces = solidFaces(model.solid, { overhangMm: 400 });
+  assert.deepEqual(faces.map((face) => face.kind).sort(), ["end", "end", "roof", "roof", "wall", "wall"]);
+  const centre = { x: 4500, y: 3000, z: 1500 };
+  for (const face of faces) {
+    const mid = face.points.reduce((sum, p) => ({ x: sum.x + p.x / face.points.length, y: sum.y + p.y / face.points.length, z: sum.z + p.z / face.points.length }), { x: 0, y: 0, z: 0 });
+    assert.ok((mid.x - centre.x) * face.normal.x + (mid.y - centre.y) * face.normal.y + (mid.z - centre.z) * face.normal.z > 0, `${face.kind} faces outward`);
+  }
+  const roof = faces.filter((face) => face.kind === "roof").flatMap((face) => face.points);
+  assert.deepEqual([Math.min(...roof.map((p) => p.x)), Math.max(...roof.map((p) => p.x))], [-400, 9400]);
+  assert.deepEqual([Math.min(...roof.map((p) => p.y)), Math.max(...roof.map((p) => p.y))], [-400, 6400]);
+  // The eave drops down the slope: 400 mm flat at a rise of 1 500 over 3 000.
+  assert.equal(Math.min(...roof.map((p) => p.z)), 2200);
+  for (const solid of [buildingModel(lodge).solid, buildingModel(dome).solid]) {
+    for (const face of solidFaces(solid)) assert.ok(Number.isFinite(face.normal.x) && face.points.length >= 3, solid.kind);
+  }
+});
+
+test("the 3D sketch shows the near side and start end, and only the openings on them", () => {
+  const html = renderBuildingSheet(cabin);
+  const sketch = html.slice(html.indexOf('<g id="sketch-view"'), html.indexOf("</g>\n", html.indexOf('<g id="sketch-view"')));
+  const shown = [...sketch.matchAll(/data-opening="([^"]+)"/g)].map(([, id]) => id).sort();
+  // W1, D1, W4 on the near side and W2 on the start end face the viewer; W3 (far
+  // side) and D2 (end) are behind the building and must not show through.
+  assert.deepEqual(shown, ["D1", "W1", "W2", "W4"]);
+  // Doors and windows are drawn as in the elevations, not as flat boxes.
+  assert.ok(sketch.includes('class="leaf"') && sketch.includes('class="glass"'));
 });
