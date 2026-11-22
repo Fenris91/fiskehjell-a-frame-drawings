@@ -222,12 +222,15 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     ${dimensionH(left, right, ground + 30, `${mm(across.widthMm)} mm`)}
   </g>`;
   }
-  // The roof of a box building, drawn over its walls with its overhang.
+  // The roof of a box building, drawn over its walls with its overhang. Both
+  // elevations use the roof faces the 3D sketch draws, so all three views put the
+  // eaves in the same place: the overhang is measured flat, as on the plan.
+  const roofPoints = box ? solidFaces(solid, { overhangMm: over }).filter((face) => face.kind === "roof").flatMap((face) => face.points) : [];
   function roofFor(id, place) {
     if (!box) return "";
-    const top = box.heightMm, eaveNear = box.vertices.E[1], eaveFar = box.vertices.D[1];
     if (id === "side-view") {
-      const low = Math.min(eaveNear, eaveFar), high = box.roof.kind === "flat" ? top + 120 : top;
+      const zs = roofPoints.map((p) => p.z);
+      const low = Math.min(...zs), high = box.roof.kind === "flat" ? box.heightMm + 120 : Math.max(...zs);
       const band = [place({ x: -over, y: 0, z: low }), place({ x: L + over, y: 0, z: low }), place({ x: L + over, y: 0, z: high }), place({ x: -over, y: 0, z: high })];
       const lines = box.roof.kind === "flat" ? "" : Array.from({ length: Math.max(0, Math.floor((high - low) / 300)) }, (_, index) => {
         const z = low + (index + 1) * 300;
@@ -235,14 +238,11 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
       }).join("");
       return `<polygon class="roof" points="${points(band)}" />${lines}`;
     }
-    // End view: the roof line runs past the walls by the overhang, along its slope.
-    const slope = (from, to, extend) => {
-      const length = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1;
-      return [from[0] + (from[0] - to[0]) / length * extend, from[1] + (from[1] - to[1]) / length * extend];
-    };
-    const E = box.vertices.E, D = box.vertices.D, C = box.ridge ? box.vertices.C : null;
-    const path = C ? [slope(E, C, over), C, slope(D, C, over)] : [slope(E, D, over), slope(D, E, over)];
-    return `<polyline class="roof-edge-heavy" points="${points(path.map(([y, z]) => place({ x: 0, y, z })))}" />`;
+    // End view: the roof's edge at the start gable, eave to ridge to eave.
+    const seen = new Map();
+    for (const p of roofPoints) if (Math.abs(p.x + over) < 1e-6) seen.set(`${Math.round(p.y * 100)}:${Math.round(p.z * 100)}`, p);
+    const path = [...seen.values()].sort((a, b) => a.y - b.y);
+    return `<polyline class="roof-edge-heavy" points="${points(path.map((p) => place({ x: 0, y: p.y, z: p.z })))}" />`;
   }
   // Horizontal boards on the vertical walls of a box or footprint building.
   function cladding(id, place) {

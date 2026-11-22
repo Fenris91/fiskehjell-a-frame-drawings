@@ -280,3 +280,17 @@ test("the 3D sketch shows the near side and start end, and only the openings on 
   // Doors and windows are drawn as in the elevations, not as flat boxes.
   assert.ok(sketch.includes('class="leaf"') && sketch.includes('class="glass"'));
 });
+
+test("the side and end elevations put the eaves where the 3D sketch does", () => {
+  const html = renderBuildingSheet(cabin);
+  const view = (id) => html.slice(html.indexOf(`<g id="${id}"`), html.indexOf("</g>\n", html.indexOf(`<g id="${id}"`)));
+  const ys = (list) => list.trim().split(" ").map((pair) => Number(pair.split(",")[1]));
+  const band = ys(view("side-view").match(/<polygon class="roof" points="([^"]+)"/)[1]);
+  const edge = ys(view("end-view").match(/<polyline class="roof-edge-heavy" points="([^"]+)"/)[1]);
+  // The levels on the side elevation: ground, wall top (+2.400) and ridge.
+  const [ground, wallTop] = [...html.matchAll(/class="level-line" x1="[^"]+" y1="([^"]+)"/g)].map(([, y]) => Number(y));
+  // A 400 mm overhang measured flat drops the eave 200 mm down a 1 500 / 3 000 slope.
+  const eave = ground - (ground - wallTop) * 2200 / 2400;
+  assert.ok(Math.abs(Math.max(...band) - eave) < 0.2, `side elevation eave at ${Math.max(...band)}, expected ${eave}`);
+  assert.ok(Math.abs(edge[0] - eave) < 0.2 && Math.abs(edge.at(-1) - eave) < 0.2, `end elevation eaves at ${edge[0]} and ${edge.at(-1)}, expected ${eave}`);
+});
