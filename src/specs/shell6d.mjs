@@ -19,7 +19,6 @@ export const shell6d = {
     endGableCenters: [0.5],
     endGableStartCenters: [],
     endGableEndCenters: [0.5],
-    gableViewEnd: "end",
     sideDoor: {
       ...shell6.doors.sideDoor,
       enabled: false,
@@ -35,23 +34,6 @@ export const shell6d = {
       centerRatios: [0.2, 0.8],
       opensToward: "end"
     }
-  },
-
-  shellGraph: {
-    ...shell6.shellGraph,
-    endDoorPolygons: [
-      [[818, 586], [830, 595], [830, 555], [818, 546]],
-      [[835, 600], [847, 609], [847, 569], [835, 560]]
-    ],
-    internalDoorPolygons: [
-      [[723.3, 596.5], [715.4, 628.2], [728, 638], [731.8, 603.1]],
-      [[738, 607.9], [737, 645], [749.6, 654.8], [746.5, 614.6]]
-    ],
-    doorArrows: [
-      { id: "end-far", from: [833, 579], to: [851, 566], far: true },
-      { id: "internal-left", from: [724, 614], to: [724, 633] },
-      { id: "internal-right", from: [743, 626], to: [743, 646] }
-    ]
   },
 
   notes: [

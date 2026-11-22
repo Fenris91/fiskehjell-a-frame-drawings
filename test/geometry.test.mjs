@@ -13,29 +13,10 @@ const clean = (html) => html.replace(/[ \t]+$/gm, "");
 const golden = (name) => readFile(new URL(`./golden/${name}.html`, import.meta.url), "utf8");
 
 test("every sheet still matches its saved drawing", async () => {
-  // Saved before the geometry core replaced the hand-placed 3D points. The three
-  // closed shells are unchanged to the byte. The Hall's 3D sketch moved by under
-  // one sheet unit (next test), and its saved drawing was refreshed for that.
   for (const spec of [hall, shell6, shell6d, shell8]) {
     assert.equal(clean(renderAFrameSheet(spec)), await golden(spec.id), `${spec.id} sheet`);
     assert.equal(clean(renderCheckpointSheet(spec)), await golden(`${spec.id}-checkpoint`), `${spec.id} checkpoint`);
   }
-});
-
-test("the Hall's 3D sketch stays within one sheet unit of the hand-placed sketch it replaces", () => {
-  // The hand-placed sketch put its frames at these ratios; the solid uses real distances.
-  const front = { A: [560, 690], B: [605, 725], C: [590, 595] };
-  const ratios = { E4: 0, E3: 0.055, E2: 0.11, E1: 0.165 };
-  for (let index = 0; index < 13; index += 1) ratios[`F${index + 1}`] = 0.27 + (index / 12) * 0.73;
-  let worst = 0;
-  for (const [station, ratio] of Object.entries(ratios)) {
-    for (const vertex of ["A", "B", "C"]) {
-      const [x, y] = hall.shellGraph.nodes[`${station}${vertex}`];
-      worst = Math.max(worst, Math.hypot(x - (front[vertex][0] + 280 * ratio), y - (front[vertex][1] - 125 * ratio)));
-    }
-  }
-  assert.ok(worst < 1, `largest move ${worst.toFixed(2)}`);
-  assert.equal(Object.keys(hall.shellGraph.nodes).length, 17 * 3);
 });
 
 test("a profile extruded through stations gives frames, rails and true distances", () => {

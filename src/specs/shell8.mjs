@@ -1,63 +1,7 @@
-import { extrude, obliqueView, profiles, projectSolid, stationRun } from "../geometry.mjs";
 import { shell6 } from "./shell6.mjs";
 
-const frameCount = 8;
+// The middle anchor pair stands at frame 4 of 8: three bays of seven along.
 const middleAnchorRatio = 3 / 7;
-// The eight-frame closed shell as a solid, seen through the same oblique view as Shell 6.
-const shellProfile = profiles.aframe({ widthMm: shell6.dimensions.widthMm, heightMm: shell6.dimensions.heightMm });
-const shellSolid = extrude(shellProfile, [stationRun("F", frameCount)], { lengthMm: 18900 });
-const shellView = obliqueView({ origin: [560, 690], along: [250, -110], across: [45, 35], up: [7.5, -112.5] });
-const { nodes: shellNodes, edges: shellEdges } = projectSolid(shellSolid, shellView);
-
-const shell8Graph = {
-  viewTransform: "translate(0 0)",
-  nodes: shellNodes,
-  edges: shellEdges,
-  nodeLabels: {
-    F1A: "A",
-    F1B: "B",
-    F1C: "C"
-  },
-  nodeLabelOffsets: {
-    F1A: [-12, -10],
-    F1B: [14, 14],
-    F1C: [-11, -10]
-  },
-  anchorNodes: ["F1A", "F1B", "F4A", "F4B", "F8A", "F8B"],
-  anchorLabels: {
-    F1A: "B1",
-    F4A: "B2",
-    F8A: "B3",
-    F1B: "B4",
-    F4B: "B5",
-    F8B: "B6"
-  },
-  axisExtents: {
-    origin: [458, 735],
-    x: [560, 690],
-    y: [855, 735],
-    z: [458, 485]
-  },
-  axisLabelPositions: {
-    x: [520, 708],
-    y: [868, 739],
-    z: [448, 477]
-  },
-  axisGuides: [
-    [[458, 485], [840, 485]],
-    [[855, 615], [855, 735]]
-  ],
-  endDoorPolygons: [
-    [[571.5, 663.5], [563.6, 692.8], [575.8, 702.3], [580, 670.1]],
-    [[589.5, 677.4], [589.3, 712.8], [601.4, 722.2], [598, 684]],
-    [[821.5, 553.5], [813.6, 582.8], [825.8, 592.3], [830, 560.1]],
-    [[839.5, 567.4], [839.3, 602.8], [851.4, 612.2], [848, 574]]
-  ],
-  doorArrows: [
-    { id: "end-start", from: [583, 692], to: [565, 705] },
-    { id: "end-far", from: [833, 582], to: [851, 569], far: true }
-  ]
-};
 
 export const shell8 = {
   ...shell6,
@@ -107,7 +51,6 @@ export const shell8 = {
     ]
   },
 
-  shellGraph: shell8Graph,
 
   notes: [
     "8 A-FRAMES · 6 ANCHORS · 4 END-GABLE DOOR SETS",
