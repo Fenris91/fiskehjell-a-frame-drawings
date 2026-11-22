@@ -126,6 +126,21 @@ export function buildingModel(spec) {
     return { ...opening, sillMm: sill, wall, offsetMm, normal: wall.normal,
       quad: [at(offsetMm, sill), at(offsetMm + opening.widthMm, sill), at(offsetMm + opening.widthMm, top), at(offsetMm, top)] };
   });
+  // An opening on a wall that runs along the frames must sit in a bay: a frame
+  // post (half a wall thickness either side of its station) never runs through it.
+  if (solid.kind === "extrusion" && (solid.stations ?? []).length > 2) {
+    const inner = solid.stations.slice(1, -1);
+    const post = thickness / 2;
+    for (const opening of openings) {
+      if (opening.offsetMm === null || Math.abs(opening.wall.along[1]) > 1e-9) continue;
+      const xs = [opening.quad[0].x, opening.quad[1].x], low = Math.min(...xs), high = Math.max(...xs);
+      const crossed = inner.filter((station) => station.x > low - post && station.x < high + post);
+      const side = opening.wall.label.toLowerCase();
+      check(crossed.length === 0, crossed.length
+        ? `${opening.id}: crosses the frame at x ${Math.round(crossed[0].x)} on ${side}; move it into a bay`
+        : `${opening.id}: sits in a bay on ${side}, clear of the frames`);
+    }
+  }
   for (const wall of walls) {
     const here = openings.filter((opening) => opening.wall === wall && opening.offsetMm !== null).sort((a, b) => a.offsetMm - b.offsetMm);
     // Two openings clash only if they share both a stretch of wall and a band of height.

@@ -46,6 +46,47 @@ function inset(polygon, distance) {
   });
 }
 
+// A door or window as seen in an elevation, drawn in the opening's own
+// coordinates so it follows the wall on angled and curved views too: u runs
+// across the opening (0 to 1), v up from the sill (0 to 1). Sizes are in mm.
+const FRAME_MM = 70; // door and window frame (karm) seen face on
+const SASH_MM = 50; // window sash (ramme) inside the frame
+function openingElevation(opening, quad) {
+  const [a, b, c, d] = quad;
+  const at = (u, v) => [a[0] + (b[0] - a[0]) * u + (d[0] - a[0]) * v + (c[0] - b[0] - d[0] + a[0]) * u * v,
+    a[1] + (b[1] - a[1]) * u + (d[1] - a[1]) * v + (c[1] - b[1] - d[1] + a[1]) * u * v];
+  const W = opening.widthMm, H = opening.heightMm;
+  const box = (x0, y0, x1, y1, className) => `<polygon class="${className}" points="${points([at(x0 / W, y0 / H), at(x1 / W, y0 / H), at(x1 / W, y1 / H), at(x0 / W, y1 / H)])}" />`;
+  const frame = box(0, 0, W, H, "opening");
+  if (opening.kind === "door") {
+    // A single leaf up to 1 200 mm, a pair of leaves above it. The lever sits at
+    // 1 050 mm on the latch side, away from the hinges.
+    const leaves = W > 1200 ? 2 : 1, leafW = (W - 2 * FRAME_MM) / leaves;
+    const parts = [frame];
+    for (let i = 0; i < leaves; i += 1) {
+      const x0 = FRAME_MM + i * leafW, x1 = x0 + leafW;
+      parts.push(box(x0, 0, x1, H - FRAME_MM, "leaf"));
+      parts.push(box(x0 + leafW * 0.18, H * 0.56, x1 - leafW * 0.18, H - FRAME_MM - 180, "leaf-panel"));
+      parts.push(box(x0 + leafW * 0.18, 220, x1 - leafW * 0.18, H * 0.46, "leaf-panel"));
+      const latch = leaves === 2 ? (i === 0 ? x1 - 70 : x0 + 70) : x1 - 90;
+      const lever = leaves === 2 ? (i === 0 ? -130 : 130) : -130;
+      parts.push(line(at(latch / W, 1050 / H), at((latch + lever) / W, 1050 / H), "handle-lever"));
+    }
+    parts.push(line(at(-60 / W, 0), at((W + 60) / W, 0), "threshold"));
+    return parts.join("");
+  }
+  // Windows: one sash up to 1 300 mm wide, two above it; a sill that projects.
+  const sashes = W > 1300 ? 2 : 1, inner = W - 2 * FRAME_MM, sashW = inner / sashes;
+  const parts = [frame];
+  for (let i = 0; i < sashes; i += 1) {
+    const x0 = FRAME_MM + i * sashW, x1 = x0 + sashW;
+    parts.push(box(x0, FRAME_MM, x1, H - FRAME_MM, "sash"));
+    parts.push(box(x0 + SASH_MM, FRAME_MM + SASH_MM, x1 - SASH_MM, H - FRAME_MM - SASH_MM, "glass"));
+  }
+  parts.push(box(-60, -45, W + 60, 0, "sill-board"));
+  return parts.join("");
+}
+
 export function renderBuildingSheet(spec, { audit = false } = {}) {
   const model = buildingModel(spec);
   const { solid, walls, openings, braces, pads, checks, facts, thicknessMm } = model;
@@ -153,11 +194,8 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
       .map(([from, to, kind]) => line(place(solid.nodes[from]), place(solid.nodes[to]), edgeClass(kind)));
     const seen = openings.filter((opening) => facing(opening.normal) > 0.3).map((opening) => {
       const quad = opening.quad.map((corner) => place(corner));
-      const middleX = (quad[0][0] + quad[1][0]) / 2, middleY = (quad[0][1] + quad[3][1]) / 2;
-      const detail = opening.kind === "door"
-        ? `${line([middleX, quad[3][1]], [middleX, quad[0][1]], "opening-bar light")}<circle class="handle" cx="${n(quad[1][0] - (quad[1][0] - quad[0][0]) * 0.18)}" cy="${n(middleY + 4)}" r="1.4" />`
-        : `${line([middleX, quad[3][1]], [middleX, quad[0][1]], "opening-bar")}${line([quad[0][0], middleY], [quad[1][0], middleY], "opening-bar")}${line([quad[0][0] - 3, quad[0][1]], [quad[1][0] + 3, quad[1][1]], "sill")}`;
-      return `<g data-opening="${esc(opening.id)}"><polygon class="opening" points="${points(quad)}" />${detail}${text(middleX, quad[3][1] - 4, opening.id, "tag", 'text-anchor="middle"')}</g>`;
+      const middleX = (quad[0][0] + quad[1][0]) / 2;
+      return `<g data-opening="${esc(opening.id)}">${openingElevation(opening, quad)}${text(middleX, quad[3][1] - 4, opening.id, "tag", 'text-anchor="middle"')}</g>`;
     });
     const struts = braces.filter((brace) => depth(brace.from) <= 1 && depth(brace.to) <= 1 && (brace.station !== undefined ? id === "end-view" : facing(walls.find((wall) => wall.id === brace.wall)?.normal ?? [0, 0]) > 0.3))
       .map((brace) => {
@@ -403,6 +441,13 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     .opening-bar.light { stroke-dasharray: 3 2; }
     .handle { fill: ${OPENING}; }
     .sill { stroke: ${OPENING}; stroke-width: 1.6; }
+    .leaf { fill: #f3f5f7; stroke: ${OPENING}; stroke-width: 0.8; }
+    .leaf-panel { fill: none; stroke: ${OPENING}; stroke-width: 0.5; }
+    .sash { fill: #ffffff; stroke: ${OPENING}; stroke-width: 0.7; }
+    .glass { fill: #dbe7f5; stroke: ${OPENING}; stroke-width: 0.5; }
+    .sill-board { fill: #ffffff; stroke: ${OPENING}; stroke-width: 0.9; }
+    .handle-lever { stroke: ${INK}; stroke-width: 1.6; stroke-linecap: round; }
+    .threshold { stroke: ${INK}; stroke-width: 1.4; }
     .brace { stroke: #6b7279; stroke-width: 2.6; stroke-linecap: round; }
     .ground { stroke: ${INK}; stroke-width: 1.8; }
     .ground-hatch { stroke: ${INK}; stroke-width: 0.5; }

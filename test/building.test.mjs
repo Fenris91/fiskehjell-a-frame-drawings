@@ -218,3 +218,35 @@ test("audit detail is numbered on the plan and written out in a list", () => {
     assert.ok(Math.hypot(spots[i][0] - spots[j][0], spots[i][1] - spots[j][1]) >= 13, `markers ${i + 1} and ${j + 1} overlap`);
   }
 });
+
+test("an opening on a framed wall must sit in a bay, never across a frame post", () => {
+  // The cabin's first layout: a door across frame 2 and a window across frame 3.
+  const crossing = { ...cabin, openings: [
+    { id: "D1", kind: "door", wall: "near", center: 0.3, widthMm: 900, heightMm: 2100 },
+    { id: "W1", kind: "window", wall: "near", center: 0.72, widthMm: 1500, heightMm: 1200, sillMm: 900 }
+  ] };
+  const found = failed(buildingModel(crossing)).join("\n");
+  assert.match(found, /D1: crosses the frame at x 3000 on near side/);
+  assert.match(found, /W1: crosses the frame at x 6000 on near side/);
+  // Running into a post (within half a wall thickness of the frame) also counts; ending at its face is fine.
+  const touching = { ...cabin, openings: [{ id: "W9", kind: "window", wall: "near", center: (3000 - 50 - 600) / 9000, widthMm: 1200, heightMm: 1200, sillMm: 900 }] };
+  assert.match(failed(buildingModel(touching)).join("\n"), /W9: crosses the frame at x 3000/);
+  const atFace = { ...cabin, openings: [{ id: "W8", kind: "window", wall: "near", center: (3000 - 100 - 600) / 9000, widthMm: 1200, heightMm: 1200, sillMm: 900 }] };
+  assert.deepEqual(failed(buildingModel(atFace)), []);
+  // End walls run across the frames, so they are not checked for it.
+  const model = buildingModel(cabin);
+  assert.ok(model.checks.some((c) => c.ok && /D1: sits in a bay on near side/.test(c.text)));
+  assert.ok(!model.checks.some((c) => /W2: .*bay/.test(c.text)));
+});
+
+test("elevations draw doors and windows with frames, glass, sills and a lever at 1 050 mm", () => {
+  const html = renderBuildingSheet(cabin);
+  const side = html.slice(html.indexOf('id="side-view"'), html.indexOf('id="end-view"'));
+  assert.equal((side.match(/class="glass"/g) || []).length, 2, "W1 and W4, one sash each");
+  assert.equal((side.match(/class="sill-board"/g) || []).length, 2);
+  assert.equal((side.match(/class="leaf"/g) || []).length, 1, "a 1 000 mm door has one leaf");
+  assert.equal((side.match(/class="handle-lever"/g) || []).length, 1);
+  const wide = renderBuildingSheet({ ...cabin, openings: [{ id: "D9", kind: "door", wall: "near", center: 0.5, widthMm: 1600, heightMm: 2100 }, { id: "W9", kind: "window", wall: "far", center: 0.5, widthMm: 1800, heightMm: 1200, sillMm: 900 }] });
+  const wideSide = wide.slice(wide.indexOf('id="side-view"'), wide.indexOf('id="end-view"'));
+  assert.equal((wideSide.match(/class="leaf"/g) || []).length, 2, "a 1 600 mm door is a pair of leaves");
+});
