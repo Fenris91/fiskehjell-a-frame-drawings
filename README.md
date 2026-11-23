@@ -153,14 +153,26 @@ along its length through numbered **stations**:
 - `extrude(profile, runs, { lengthMm })` is the solid: a frame at every station
   and a rail along every corner. Separate runs leave a gap, such as the Hall's
   open passage.
-- `obliqueView(...)` and `projectSolid(...)` give the 3D sketch; `elevation(...)`
-  fits the section into the end view.
+- `solidFaces(solid)` gives its outside as faces with outward normals;
+  `elevation(...)` fits the section into the end view.
 
 It also holds box and arch sections, `prismSolid` for a footprint that is not a
-rectangle and `revolvedSolid` for a round one. The other building forms are
-drawn entirely from these. On the A-frame sheets the 3D sketch and the end view
-are drawn from the core; their plan and side views still work from the
-dimensions and stations directly.
+rectangle and `revolvedSolid` for a round one.
+
+### The 3D sketch
+
+Every sheet's 3D sketch comes from `src/sketch3d.mjs`: the solid's faces seen
+from the near-left corner of the plan, above, in true proportions. That is the
+side elevation's near side and the end elevation's start end. Faces turned away
+are left out, nearer faces cover further ones, and frames, rails, wires,
+anchors and doors are cut where a face is in front of them. Nothing in it is
+placed by hand, so it is right whenever the dimensions are: it is drawn from
+the same millimetres as the plan and elevations.
+
+On the A-frame sheets, `aframeShape(spec)` is those millimetres: frames, the
+open extension past the end gable, anchors and emergency doors. The plan, side
+view, A-frame view, 3D sketch and foundation schedule are all drawn from it,
+each view at one scale, and a test checks that they agree.
 
 ## Specification ownership
 
@@ -171,13 +183,11 @@ dimensions and stations directly.
 | `anchors` | Closed anchor stations, B labels and L-extension labels |
 | `doors` | End pairs, middle door, canopy, leaf split and outward swing |
 | `bracing` | Near/far steel-wire convention and braced side-view zones |
-| `shellGraph` | Named 3D structural nodes, node-to-node edges, open interface gap and outer X/Y/Z extents |
 | `notes` | Status and verification statements printed on the sheet |
 
-The 3D structure is topology-driven: every line references two named nodes.
-Move a node once to update every connected edge. `axisExtents` owns the outer
-X, Y and Z datums, and `clearPassage.between` records the deliberate missing
-base connection at the shell/extension pedestrian opening.
+The extension stands past the end gable: `foundation.extension.passageLengthMm`
+of clear passage, then `anchorSpanMm` over its frames. The passage is open on
+the right side (anchors B5…) below `structure.extension.passageHeadRatio`.
 
 Doors can be added, removed or moved with `sideDoor.enabled`,
 `sideDoor.stationRatio` and `endGableCenters`. Wire elements are individually

@@ -3,6 +3,7 @@
 // layer that can be switched on over the same drawing.
 import { buildingModel } from "./building.mjs";
 import { convexHull, solidFaces } from "./geometry.mjs";
+import { depthOf, dot3, facing, fit, view } from "./sketch3d.mjs";
 
 const INK = "#111111";
 const WALL = "#eef1f3";
@@ -272,28 +273,15 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
   // the side elevation and the same start end as the end elevation. Faces turned
   // away are left out and nearer faces cover further ones, so an opening only
   // shows on the wall it is in, drawn as in the elevations.
-  const azimuth = 36 * Math.PI / 180, tilt = 20 * Math.PI / 180;
-  const right = { x: Math.cos(azimuth), y: -Math.sin(azimuth), z: 0 };
-  const up = { x: Math.sin(azimuth) * Math.sin(tilt), y: Math.cos(azimuth) * Math.sin(tilt), z: Math.cos(tilt) };
-  const into = { x: Math.sin(azimuth) * Math.cos(tilt), y: Math.cos(azimuth) * Math.cos(tilt), z: -Math.sin(tilt) };
-  const dot3 = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
-  const faces = solidFaces(solid, { overhangMm: over }).filter((face) => dot3(face.normal, into) < -1e-9);
-  const depthOf = (face) => face.points.reduce((sum, p) => sum + dot3(p, into), 0) / face.points.length;
+  const into = view.into;
+  const faces = facing(solidFaces(solid, { overhangMm: over }));
   // A box, arch or A-frame is convex, so its walls never hide each other; only a
   // roof that overhangs reaches over them. A footprint can have notches, so its
   // faces go from the furthest to the nearest.
   faces.sort(solid.kind === "extrusion"
     ? (a, b) => (a.kind === "roof") - (b.kind === "roof")
     : (a, b) => depthOf(b) - depthOf(a));
-  const flatSketch = faces.flatMap((face) => face.points).map((p) => [dot3(p, right), -dot3(p, up)]);
-  const sx = flatSketch.map(([x]) => x), sy = flatSketch.map(([, y]) => y);
-  const sketchBox = { x: 690, y: 110, w: 250, h: 280 };
-  const spanX = Math.max(...sx) - Math.min(...sx), spanY = Math.max(...sy) - Math.min(...sy);
-  const sketchScale = Math.min(sketchBox.w / spanX, sketchBox.h / spanY);
-  const K = (p) => [
-    sketchBox.x + (sketchBox.w - spanX * sketchScale) / 2 + (dot3(p, right) - Math.min(...sx)) * sketchScale,
-    sketchBox.y + (sketchBox.h - spanY * sketchScale) / 2 + (-dot3(p, up) - Math.min(...sy)) * sketchScale
-  ];
+  const K = fit(faces.flatMap((face) => face.points), { x: 690, y: 110, w: 250, h: 280 });
   const onFace = (face, p) => Math.abs(dot3(face.normal, { x: p.x - face.points[0].x, y: p.y - face.points[0].y, z: p.z - face.points[0].z })) < 1;
   // Where a plane (one coordinate held at a value) cuts a face: a segment, or nothing.
   const cut = (face, axis, value) => {
@@ -332,7 +320,7 @@ export function renderBuildingSheet(spec, { audit = false } = {}) {
     ? openings.filter((opening) => opening.normal[0] * into.x + opening.normal[1] * into.y < -0.15).map(sketchOpening) : [];
   const sketch = `
   <g id="sketch-view" aria-label="Three-dimensional sketch">
-    ${text(sketchBox.x, 84, "3D SKETCH / 3D-SKISSE", "view-title")}
+    ${text(690, 84, "3D SKETCH / 3D-SKISSE", "view-title")}
     ${sketchFaces.join("")}${roundOpenings.join("")}
   </g>`;
 

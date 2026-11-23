@@ -1,4 +1,5 @@
-import { elevation, profiles } from "./geometry.mjs";
+import { elevation, extrusionSolid, profiles, solidFaces } from "./geometry.mjs";
+import { facing, fit, hiddenBehind, visibleParts } from "./sketch3d.mjs";
 
 const DEFAULT_STROKE = "#111111";
 const CONCRETE = "#e5e7e9";
@@ -89,38 +90,7 @@ export function normalizeSpec(input) {
     throw new Error("doors.sideDoor.leafSplit must contain two positive values");
   }
 
-  const graph = spec.shellGraph;
-  if (graph) {
-    for (const [name, point] of Object.entries(graph.nodes ?? {})) {
-      if (!Array.isArray(point) || point.length !== 2 || point.some((value) => !Number.isFinite(value))) {
-        throw new Error(`shellGraph.nodes.${name} must be a finite [x, y] coordinate`);
-      }
-    }
-    for (const [from, to] of graph.edges ?? []) {
-      if (!graph.nodes?.[from] || !graph.nodes?.[to]) {
-        throw new Error(`shellGraph edge ${from} -> ${to} references an unknown node`);
-      }
-    }
-    for (const [name, point] of Object.entries(graph.axisExtents ?? {})) {
-      if (!Array.isArray(point) || point.length !== 2 || point.some((value) => !Number.isFinite(value))) {
-        throw new Error(`shellGraph.axisExtents.${name} must be a finite [x, y] coordinate`);
-      }
-    }
-  }
-
   return spec;
-}
-
-function graphPoint(graph, name) {
-  const point = graph?.nodes?.[name];
-  if (!point) throw new Error(`Unknown shellGraph node: ${name}`);
-  return point;
-}
-
-function graphEdge(graph, from, to, className = "axon-frame graph-edge") {
-  const [x1, y1] = graphPoint(graph, from);
-  const [x2, y2] = graphPoint(graph, to);
-  return `<line class="${className}" data-from="${from}" data-to="${to}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
 }
 
 function svgText(x, y, value, className = "", extra = "") {
@@ -148,11 +118,11 @@ function dimensionVertical(x, y1, y2, label, labelSide = 1) {
     </g>`;
 }
 
-function outwardEndDoors(x, y, width, direction, color, centerRatios = [0.2, 0.8]) {
+function outwardEndDoors(x, y, width, direction, color, centerRatios = [0.28, 0.72], leafShare = 0.105) {
   const ratios = Array.isArray(centerRatios) ? centerRatios : [0.5];
   return ratios.map((ratio) => {
     const center = x + width * ratio;
-    const leaf = width * 0.105;
+    const leaf = width * leafShare;
     const dy = direction * 32;
     return `
       <g class="door double-leaf-door" style="--door:${color}">
@@ -176,12 +146,16 @@ function outwardSideDoor(x, y, direction, color, leaf = 20) {
 }
 
 function renderPlan(spec) {
-  const x = 125;
+  // One scale for the whole plan: the width across, the length and any
+  // extension down the sheet, fitted into the view's box.
+  const shape = aframeShape(spec);
+  const scale = Math.min(235 / shape.widthMm, 620 / shape.totalLengthMm);
+  const width = n(shape.widthMm * scale);
+  const length = n(shape.lengthMm * scale);
+  const x = n(242.5 - width / 2);
   const y = 95;
-  const width = 235;
-  const length = 500;
-  const right = x + width;
-  const bottom = y + length;
+  const right = n(x + width);
+  const bottom = n(y + length);
   const centerX = x + width / 2;
   const stationY = spec.stationRatios.map((ratio) => y + ratio * length);
   const anchorRatios = closedAnchorRatios(spec);
@@ -191,7 +165,7 @@ function renderPlan(spec) {
   const anchorSpacingEndY = y + anchorSpacingEndRatio * length;
   const anchorSpacingMm = Math.round((anchorSpacingEndRatio - anchorSpacingStartRatio) * spec.dimensions.closedLengthMm);
   const extensionFrames = spec.structure.extension.enabled ? spec.structure.extension.frames : 0;
-  const extensionHeight = extensionFrames ? 120 : 0;
+  const extensionHeight = n((shape.totalLengthMm - shape.lengthMm) * scale);
   const extensionFoundation = spec.foundation.extension;
   const extensionMeasuredSpanMm = extensionFrames
     ? extensionFoundation.passageLengthMm + extensionFoundation.anchorSpanMm
@@ -273,8 +247,8 @@ function renderPlan(spec) {
     <line class="structure-heavy" x1="${x}" y1="${bottom}" x2="${right}" y2="${bottom}" />
     ${stationLines}
     ${anchorMarks}
-    ${outwardEndDoors(x, y, width, -1, green, startDoorCenters)}
-    ${outwardEndDoors(x, bottom, width, 1, green, endDoorCenters)}
+    ${outwardEndDoors(x, y, width, -1, green, startDoorCenters, spec.doors.endDoorWidthRatio / 2)}
+    ${outwardEndDoors(x, bottom, width, 1, green, endDoorCenters, spec.doors.endDoorWidthRatio / 2)}
     ${spec.doors.sideDoor.enabled !== false ? `${outwardSideDoor(x, doorY, -1, green)}${outwardSideDoor(right, doorY, 1, green)}` : ""}
     ${internalDoorPair?.enabled ? `<g class="internal-door-pair">${outwardEndDoors(
       x,
@@ -282,7 +256,8 @@ function renderPlan(spec) {
       width,
       internalDoorPair.opensToward === "start" ? -1 : 1,
       green,
-      internalDoorPair.centerRatios ?? [0.2, 0.8]
+      internalDoorPair.centerRatios ?? [0.28, 0.72],
+      spec.doors.endDoorWidthRatio / 2
     )}</g>` : ""}
     ${extension}
     ${dimensionHorizontal(x, right, widthDimensionY, `${mm(spec.dimensions.widthMm)} mm Y - ANCHOR C/L`)}
@@ -297,30 +272,33 @@ function renderPlan(spec) {
 }
 
 function renderGable(spec) {
+  // The section at one scale: as wide and as high as it is, in a 320 × 248 box.
+  const { widthMm, heightMm } = spec.dimensions;
+  const scale = Math.min(320 / widthMm, 248 / heightMm);
   const cx = 720;
-  const top = 82;
   const base = 330;
-  const left = 560;
-  const right = 880;
+  const top = n(base - heightMm * scale);
+  const left = n(cx - widthMm * scale / 2);
+  const right = n(cx + widthMm * scale / 2);
   const beamY = top + (base - top) * spec.structure.lowerCrossBeamRatio;
+  // The collar beam reaches the same share of the way to each leg as before.
+  const beamHalf = 62 / 160 * (right - left) / 2;
   const green = spec.doors.emergencyColor;
-  const doorW = (right - left) * spec.doors.endDoorWidthRatio;
-  const doorH = 64;
-  const doorY = base - doorH;
-  const startDoorCenters = spec.doors.endGableStartCenters ?? spec.doors.endGableCenters ?? [];
-  const endDoorCenters = spec.doors.endGableEndCenters ?? spec.doors.endGableCenters ?? [];
-  const selectedDoorRatios = spec.doors.gableViewEnd === "start"
-    ? startDoorCenters
-    : (endDoorCenters.length ? endDoorCenters : startDoorCenters);
-  const hasEndSpecificDoorLayout = Array.isArray(spec.doors.endGableStartCenters)
-    || Array.isArray(spec.doors.endGableEndCenters);
-  const doorCenters = hasEndSpecificDoorLayout
-    ? selectedDoorRatios.map((ratio) => left + ratio * (right - left))
-    : [cx - 70, cx + 70];
+  // This view is the end gable seen from outside: the left anchors (B1…) on the
+  // left, Y running to the right. Doors come from the shape at this view's scale:
+  // the end gable's own, and any internal pair behind it.
+  const shape = aframeShape(spec);
+  const endDoors = shape.doors.filter((door) => door.kind === "end" && door.x > 0);
+  const doorW = n(spec.doors.endDoorWidthRatio * widthMm * scale);
+  const doorH = n(shape.doors.find((door) => door.kind !== "side")?.heightMm * scale || 0);
+  const doorY = n(base - doorH);
+  const across = (y) => n(left + y * scale);
+  const doorCenters = endDoors.map((door) => across(door.y));
   const internalDoorPair = spec.doors.internalDoorPair;
-  const internalDoorCenters = [cx - 76, cx + 76];
-  const internalDoorW = 42;
-  const internalDoorH = 56;
+  const internalDoors = shape.doors.filter((door) => door.kind === "internal");
+  const internalDoorCenters = internalDoors.map((door) => across(door.y));
+  const internalDoorW = doorW;
+  const internalDoorH = doorH;
   const sideDoorHeight = spec.doors.sideDoor.enabled !== false
     ? spec.doors.sideDoor.heightMm / spec.dimensions.heightMm * (base - top)
     : 0;
@@ -346,7 +324,7 @@ function renderGable(spec) {
     ${svgText(cx, 58, "A-FRAME / TRIANGELFASADE", "view-title", 'text-anchor="middle"')}
     <polygon class="gable-fill" points="${section.outline.map(([x, y]) => `${x},${y}`).join(" ")}" />
 ${section.edges.map(([[x1, y1], [x2, y2]]) => `    <line class="structure-heavy" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`).join("\n")}
-    <line class="structure-heavy" x1="${cx - 62}" y1="${beamY}" x2="${cx + 62}" y2="${beamY}" />
+    <line class="structure-heavy" x1="${n(cx - beamHalf)}" y1="${n(beamY)}" x2="${n(cx + beamHalf)}" y2="${n(beamY)}" />
     ${doorCenters.map((dc) => `
       <g class="door gable-door" style="--door:${green}">
         <rect x="${n(dc - doorW / 2)}" y="${doorY}" width="${n(doorW)}" height="${doorH}" />
@@ -357,7 +335,7 @@ ${section.edges.map(([[x1, y1], [x2, y2]]) => `    <line class="structure-heavy"
       </g>`).join("")}
     ${internalDoorPair?.enabled ? internalDoorCenters.map((dc) => `
       <g class="door internal-gable-door far-door" style="--door:${green}">
-        <rect x="${n(dc - internalDoorW / 2)}" y="${base - internalDoorH}" width="${internalDoorW}" height="${internalDoorH}" />
+        <rect x="${n(dc - internalDoorW / 2)}" y="${n(base - internalDoorH)}" width="${internalDoorW}" height="${internalDoorH}" />
         <line class="door-divider" x1="${dc}" y1="${base - internalDoorH}" x2="${dc}" y2="${base}" />
         <path d="M ${dc} ${base} Q ${n(dc - internalDoorW / 2 - 10)} ${base - 22} ${n(dc - internalDoorW / 2)} ${base - internalDoorH}" />
         <path d="M ${dc} ${base} Q ${n(dc + internalDoorW / 2 + 10)} ${base - 22} ${n(dc + internalDoorW / 2)} ${base - internalDoorH}" />
@@ -391,193 +369,144 @@ ${section.edges.map(([[x1, y1], [x2, y2]]) => `    <line class="structure-heavy"
   </g>`;
 }
 
-function renderAxonometric(spec) {
-  const green = spec.doors.emergencyColor;
-  const graph = spec.shellGraph;
-  const originX = 570;
-  const originY = 695;
-  const ridgeStart = [635, 575];
-  const ridgeEnd = [880, 455];
-  const baseNearStart = [605, 685];
-  const baseNearEnd = [900, 540];
-  const baseFarStart = [560, 650];
-  const baseFarEnd = [855, 505];
-  const extensionFrames = spec.structure.extension.enabled ? spec.structure.extension.frames : 0;
-  const anchorRatios = closedAnchorRatios(spec);
-  const axonAnchorMarks = anchorRatios.map((ratio, anchorIndex) => {
-    const nearX = baseNearStart[0] + (baseNearEnd[0] - baseNearStart[0]) * ratio;
-    const nearY = baseNearStart[1] + (baseNearEnd[1] - baseNearStart[1]) * ratio;
-    const farX = baseFarStart[0] + (baseFarEnd[0] - baseFarStart[0]) * ratio;
-    const farY = baseFarStart[1] + (baseFarEnd[1] - baseFarStart[1]) * ratio;
-    const leftLabel = spec.anchors.closedLabelsLeft[anchorIndex] ?? `B${anchorIndex + 1}`;
-    const rightLabel = spec.anchors.closedLabelsRight[anchorIndex] ?? `B${anchorIndex + 1 + anchorRatios.length}`;
-    return `
-      <circle class="anchor-point concrete-anchor-node" data-anchor="${leftLabel}" cx="${n(nearX)}" cy="${n(nearY)}" r="4" />
-      <circle class="anchor-point concrete-anchor-node" data-anchor="${rightLabel}" cx="${n(farX)}" cy="${n(farY)}" r="4" />`;
-  }).join("");
-
-  if (graph) {
-    const axis = graph.axisExtents;
-    const graphTransform = graph.viewTransform ?? "translate(-220 390)";
-    const anchorNodes = new Set(graph.anchorNodes ?? []);
-    const graphEdges = graph.edges.map(([from, to, kind = "edge"]) =>
-      graphEdge(graph, from, to, `axon-frame graph-edge graph-${kind}`)
-    ).join("");
-    const graphNodes = Object.entries(graph.nodes).map(([name, [x, y]]) => {
-      const isAnchor = anchorNodes.has(name);
-      const anchorLabel = graph.anchorLabels?.[name] ?? "";
-      return `<circle class="anchor-point graph-node${isAnchor ? " concrete-anchor-node" : ""}" data-node="${name}" data-anchor="${anchorLabel}" cx="${x}" cy="${y}" r="${isAnchor ? 5 : 3.5}" />`;
-    }).join("");
-    const graphNodeLabels = Object.entries(graph.nodeLabels ?? {}).map(([name, label]) => {
-      const [x, y] = graphPoint(graph, name);
-      const [dx, dy] = graph.nodeLabelOffsets?.[name] ?? [0, -8];
-      return svgText(x + dx, y + dy, label, "graph-node-label", 'text-anchor="middle"');
-    }).join("");
-    const axisGuides = (graph.axisGuides ?? []).map(([[x1, y1], [x2, y2]]) =>
-      `<line class="axis-guide" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`
-    ).join("");
-    const endDoors = (graph.endDoorPolygons ?? []).map((door, index) => {
-      const points = Array.isArray(door) ? door : door.points;
-      const farClass = !Array.isArray(door) && door.far ? " far-door" : "";
-      const divider = !Array.isArray(door) && door.divider
-        ? `<line class="graph-door-divider${farClass}" x1="${door.divider[0][0]}" y1="${door.divider[0][1]}" x2="${door.divider[1][0]}" y2="${door.divider[1][1]}" />`
-        : "";
-      return `<g data-end-door-set="${index + 1}"><polygon class="graph-end-door${farClass}" data-end-door="${index + 1}" points="${points.map((point) => point.join(",")).join(" ")}" />${divider}</g>`;
-    }).join("");
-    const sideDoors = (graph.sideDoorPolygons ?? []).map((door, index) => {
-      const points = Array.isArray(door) ? door : door.points;
-      const farClass = !Array.isArray(door) && door.far ? " far-door" : "";
-      const divider = !Array.isArray(door) && door.divider
-        ? `<line class="graph-door-divider${farClass}" x1="${door.divider[0][0]}" y1="${door.divider[0][1]}" x2="${door.divider[1][0]}" y2="${door.divider[1][1]}" />`
-        : "";
-      return `<g data-side-door-set="${index + 1}"><polygon class="graph-side-door${farClass}" data-side-door="${index + 1}" points="${points.map((point) => point.join(",")).join(" ")}" />${divider}</g>`;
-    }).join("");
-    const doorSwingPaths = (graph.doorSwingPaths ?? []).map((swing) => {
-      const farClass = swing.far ? " far-door" : "";
-      return `<path class="graph-door-swing${farClass}" data-door-swing="${swing.id}" d="${swing.d}" />`;
-    }).join("");
-    const internalDoors = (graph.internalDoorPolygons ?? []).map((points, index) =>
-      `<polygon class="graph-internal-door" data-internal-door="${index + 1}" points="${points.map((point) => point.join(",")).join(" ")}" />`
-    ).join("");
-    const doorArrows = (graph.doorArrows ?? []).map((arrow) => {
-      const farClass = arrow.far ? " far-door" : "";
-      return `<line class="graph-door-direction${farClass}" data-door-arrow="${arrow.id}" x1="${arrow.from[0]}" y1="${arrow.from[1]}" x2="${arrow.to[0]}" y2="${arrow.to[1]}" marker-end="url(#door-arrow)" />`;
-    }).join("");
-    const axisLabelPositions = {
-      x: graph.axisLabelPositions?.x ?? [axis.x[0] - 8, axis.x[1] + 15],
-      y: graph.axisLabelPositions?.y ?? [axis.y[0] + 10, axis.y[1] + 4],
-      z: graph.axisLabelPositions?.z ?? [axis.z[0] - 8, axis.z[1] - 8]
-    };
-    return `
-  <g id="axonometric-view" aria-label="Three-dimensional schematic" transform="translate(0 -390)">
-    ${svgText(735, 445, "3D SKETCH / 3D-SKISSE", "view-title", 'text-anchor="middle"')}
-    <g class="axon-graph-coordinate-space" transform="${graphTransform}">
-    <g class="shell-graph" data-clear-passage="${graph.clearPassage?.between?.join(":") ?? ""}">
-      ${graphEdges}
-      ${graphNodes}
-      ${graphNodeLabels}
-    </g>
-    ${endDoors ? `<g class="graph-end-doors" style="--door:${green}">${endDoors}</g>` : ""}
-    ${internalDoors ? `<g class="graph-internal-doors" style="--door:${green}">${internalDoors}</g>` : ""}
-    ${doorSwingPaths ? `<g class="graph-door-swings" style="--door:${green}">${doorSwingPaths}</g>` : ""}
-    ${doorArrows ? `<g class="graph-door-arrows" style="--door:${green}">${doorArrows}</g>` : ""}
-    ${spec.doors.sideDoor.enabled !== false
-      ? (sideDoors
-        ? `<g class="graph-side-doors" style="--door:${green}">${sideDoors}</g>`
-        : `<g class="door axon-door" style="--door:${green}">
-      <polygon points="892,190 905,184 912,205 899,211" />
-      <line class="door-divider" x1="899" y1="187" x2="906" y2="208" />
-      <polygon class="far-door" points="938,156 951,150 958,171 945,177" />
-    </g>`)
-      : ""}
-    <g class="axis">
-      ${axisGuides}
-      <circle cx="${axis.origin[0]}" cy="${axis.origin[1]}" r="3" />
-      <line x1="${axis.origin[0]}" y1="${axis.origin[1]}" x2="${axis.x[0]}" y2="${axis.x[1]}" marker-end="url(#axis-arrow)" />
-      <line x1="${axis.origin[0]}" y1="${axis.origin[1]}" x2="${axis.y[0]}" y2="${axis.y[1]}" marker-end="url(#axis-arrow)" />
-      <line x1="${axis.origin[0]}" y1="${axis.origin[1]}" x2="${axis.z[0]}" y2="${axis.z[1]}" marker-end="url(#axis-arrow)" />
-      ${svgText(axisLabelPositions.x[0], axisLabelPositions.x[1], "X", "axis-letter")}
-      ${svgText(axisLabelPositions.y[0], axisLabelPositions.y[1], "Y", "axis-letter")}
-      ${svgText(axisLabelPositions.z[0], axisLabelPositions.z[1], "Z", "axis-letter")}
-    </g>
-    </g>
-    ${svgText(735, 748, "X LENGTH/LENGDE · Y WIDTH/BREDDE · Z HEIGHT/HØYDE", "axis-label", 'text-anchor="middle"')}
-  </g>`;
-  }
-
-  const closedFrames = spec.stationRatios.map((ratio) => {
-    const ridgeX = ridgeStart[0] + (ridgeEnd[0] - ridgeStart[0]) * ratio;
-    const ridgeY = ridgeStart[1] + (ridgeEnd[1] - ridgeStart[1]) * ratio;
-    const nearX = baseNearStart[0] + (baseNearEnd[0] - baseNearStart[0]) * ratio;
-    const nearY = baseNearStart[1] + (baseNearEnd[1] - baseNearStart[1]) * ratio;
-    const farX = baseFarStart[0] + (baseFarEnd[0] - baseFarStart[0]) * ratio;
-    const farY = baseFarStart[1] + (baseFarEnd[1] - baseFarStart[1]) * ratio;
-    return `<path class="axon-frame" d="M ${farX} ${farY} L ${ridgeX} ${ridgeY} L ${nearX} ${nearY} Z" />`;
-  }).join("");
-
-  const extension = Array.from({ length: extensionFrames }, (_, index) => {
-    const ratio = (index + 1) / extensionFrames;
-    const ridgeX = ridgeStart[0] - ratio * 120;
-    const ridgeY = ridgeStart[1] + ratio * 60;
-    const nearX = baseNearStart[0] - ratio * 150;
-    const nearY = baseNearStart[1] + ratio * 70;
-    const farX = baseFarStart[0] - ratio * 115;
-    const farY = baseFarStart[1] + ratio * 35;
-    const clearInterface = spec.structure.extension.clearInterfacePassage && index === 0;
-    if (clearInterface) {
-      const cutRatio = spec.structure.extension.passageHeadRatio ?? 0.69;
-      const cutX = ridgeX + (nearX - ridgeX) * cutRatio;
-      const cutY = ridgeY + (nearY - ridgeY) * cutRatio;
-      return `
-        <path class="axon-frame extension-frame" d="M ${farX} ${farY} L ${ridgeX} ${ridgeY}" />
-        <line class="axon-frame extension-frame clear-interface" x1="${ridgeX}" y1="${ridgeY}" x2="${n(cutX)}" y2="${n(cutY)}" />`;
+// The shell in millimetres, as every view draws it: X along the length from
+// the start gable, Y across from the left anchors (B1…) to the right ones, Z up.
+// The open extension stands past the end gable, beyond a clear passage, as the
+// plan and the foundation schedule place it.
+export function aframeShape(input) {
+  const spec = input.stationRatios ? input : normalizeSpec(input);
+  const { closedLengthMm: L, widthMm: W, heightMm: H } = spec.dimensions;
+  const frames = spec.structure.extension.enabled ? spec.structure.extension.frames : 0;
+  const passageMm = frames ? spec.foundation.extension.passageLengthMm : 0;
+  const spanMm = frames ? spec.foundation.extension.anchorSpanMm : 0;
+  const extension = Array.from({ length: frames }, (_, index) => ({ id: `E${index + 1}`, x: L + passageMm + (frames > 1 ? index * spanMm / (frames - 1) : 0) }));
+  const block = spec.foundation.concreteAnchor;
+  const anchors = closedAnchorRatios(spec).flatMap((ratio, index) => [
+    { id: spec.anchors.closedLabelsLeft[index] ?? `B${index + 1}`, x: ratio * L, y: 0 },
+    { id: spec.anchors.closedLabelsRight[index] ?? `B${index + 1 + closedAnchorRatios(spec).length}`, x: ratio * L, y: W }
+  ]);
+  if (frames) {
+    for (const [where, x] of [["INNER", L + passageMm], ["OUTER", L + passageMm + spanMm]]) {
+      anchors.push({ id: `${spec.anchors.extensionLeftLabel}-${where}`, x, y: 0 }, { id: `${spec.anchors.extensionRightLabel}-${where}`, x, y: W });
     }
-    return `<path class="axon-frame extension-frame" d="M ${farX} ${farY} L ${ridgeX} ${ridgeY} L ${nearX} ${nearY}" />`;
-  }).join("");
+  }
+  // Emergency doors in millimetres. End and internal doors take their width as a
+  // share of the span and the side door's height unless the spec gives one.
+  const d = spec.doors;
+  const doorWidthMm = d.endDoorWidthRatio * W;
+  const doorHeightMm = d.endDoorHeightMm ?? d.sideDoor.heightMm;
+  const doors = [
+    ...(d.endGableStartCenters ?? d.endGableCenters ?? []).map((ratio, index) => ({ id: `start-${index + 1}`, kind: "end", x: 0, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })),
+    ...(d.endGableEndCenters ?? d.endGableCenters ?? []).map((ratio, index) => ({ id: `end-${index + 1}`, kind: "end", x: L, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })),
+    ...(d.sideDoor.enabled !== false ? ["left", "right"].map((side) => ({ id: `side-${side}`, kind: "side", side, x: d.sideDoor.stationRatio * L, widthMm: d.sideDoor.widthMm, heightMm: d.sideDoor.heightMm })) : []),
+    ...(d.internalDoorPair?.enabled ? (d.internalDoorPair.centerRatios ?? [0.28, 0.72]).map((ratio, index) => ({ id: `internal-${index + 1}`, kind: "internal", x: d.internalDoorPair.stationRatio * L, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })) : [])
+  ];
+  return {
+    doors,
+    lengthMm: L, widthMm: W, heightMm: H, totalLengthMm: L + passageMm + spanMm, passageMm, spanMm,
+    stations: spec.stationRatios.map((ratio) => ratio * L), extension, anchors, anchorBlock: block,
+    // The clear passage's head, as a height.
+    passageHeadMm: (1 - (spec.structure.extension.passageHeadRatio ?? 0.69)) * H
+  };
+}
 
+// The 3D sketch: the closed shell's faces, its frames, the open extension and
+// the anchors, all from aframeShape, through the same view as every sheet.
+function renderAxonometric(spec) {
+  const shape = aframeShape(spec);
+  const { lengthMm: L, widthMm: W, heightMm: H } = shape;
+  const profile = sectionProfile(spec);
+  const solid = extrusionSolid(profile, [shape.stations.map((x, index) => ({ id: `F${index + 1}`, ratio: x / L }))], { lengthMm: L });
+  const faces = facing(solidFaces(solid));
+  const hidden = hiddenBehind(faces);
+  const P = (x, y, z) => ({ x, y, z });
+  // A point on a leg of the A at a height: the left leg (y = 0 side) or the right.
+  const leg = (x, side, z) => P(x, side === "left" ? (z / H) * W / 2 : W - (z / H) * W / 2, z);
+  const segments = [];
+  const add = (from, to, className, data = "") => segments.push({ from, to, className, data });
+  shape.stations.forEach((x, index) => {
+    add(leg(x, "left", 0), leg(x, "left", H), "axon-frame", `data-frame="${index + 1}"`);
+    add(leg(x, "right", H), leg(x, "right", 0), "axon-frame", `data-frame="${index + 1}"`);
+  });
+  const clear = spec.structure.extension.clearInterfacePassage;
+  shape.extension.forEach(({ id, x }, index) => {
+    add(leg(x, "left", 0), leg(x, "left", H), "axon-frame extension-frame", `data-frame="${id}"`);
+    // The first frame past a clear passage is open on the right below the passage head.
+    const foot = clear && index === 0 ? shape.passageHeadMm : 0;
+    add(leg(x, "right", H), leg(x, "right", foot), `axon-frame extension-frame${foot ? " clear-interface" : ""}`, `data-frame="${id}"`);
+  });
+  const end = shape.extension.length ? shape.extension.at(-1).x : L;
+  add(leg(0, "left", H), leg(end, "left", H), "structure-heavy", 'data-rail="ridge"');
+  add(leg(0, "left", 0), leg(end, "left", 0), "structure-heavy", 'data-rail="left"');
+  add(leg(0, "right", 0), leg(L, "right", 0), "structure-heavy", 'data-rail="right"');
+  if (shape.extension.length) {
+    add(leg(shape.extension[0].x, "right", 0), leg(end, "right", 0), "structure-heavy", 'data-rail="right-extension"');
+    if (clear) add(leg(L, "right", shape.passageHeadMm), leg(shape.extension[0].x, "right", shape.passageHeadMm), "structure-heavy passage-header", 'data-rail="passage-head"');
+  }
+  // Steel wire bracing on the long walls, as the side view draws it.
+  if (spec.bracing.steelWire) {
+    const wires = spec.bracing.elements?.length
+      ? spec.bracing.elements.map((element) => ({ wall: element.wall === "far" ? "right" : "left", from: element.from, to: element.to }))
+      : (spec.bracing.zones ?? []).flatMap(([a, b]) => ["left", "right"].flatMap((wall) => [
+          { wall, from: [a, 0], to: [b, 1] }, { wall, from: [a, 1], to: [b, 0] }]));
+    for (const wire of wires) {
+      add(leg(wire.from[0] * L, wire.wall, (1 - wire.from[1]) * H), leg(wire.to[0] * L, wire.wall, (1 - wire.to[1]) * H), `wire-${wire.wall === "left" ? "near" : "far"}`);
+    }
+  }
+  // Door outlines: end and internal doors stand across the shell; a side door
+  // sits on the skin of its long wall, from the ground to its head.
+  const doorOutlines = shape.doors.map((door) => {
+    const half = door.widthMm / 2, h = door.heightMm;
+    const corners = door.kind === "side"
+      ? [leg(door.x - half, door.side, 0), leg(door.x + half, door.side, 0), leg(door.x + half, door.side, h), leg(door.x - half, door.side, h)]
+      : [P(door.x, door.y - half, 0), P(door.x, door.y + half, 0), P(door.x, door.y + half, h), P(door.x, door.y - half, h)];
+    const middle = door.kind === "side" ? [leg(door.x, door.side, 0), leg(door.x, door.side, h)] : [P(door.x, door.y, 0), P(door.x, door.y, h)];
+    return { door, edges: [[corners[0], corners[3]], [corners[3], corners[2]], [corners[2], corners[1]]], middle };
+  });
+  const anchors = shape.anchors.map((anchor) => ({ ...anchor, at: P(anchor.x, anchor.y, 0) }));
+  const K = fit([...faces.flatMap((face) => face.points), ...segments.flatMap(({ from, to }) => [from, to]), ...anchors.map(({ at }) => at)], { x: 470, y: 80, w: 450, h: 255 });
+  const lines = segments.flatMap(({ from, to, className, data }) => visibleParts(hidden, from, to).map(([a, b]) => {
+    const [x1, y1] = K(a), [x2, y2] = K(b);
+    return `<line class="${className}"${data ? ` ${data}` : ""} x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" />`;
+  }));
+  const line3 = ([a, b], className) => { const [x1, y1] = K(a), [x2, y2] = K(b); return `<line class="${className}" x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" />`; };
+  const doors = doorOutlines.map(({ door, edges, middle }) => {
+    const parts = edges.flatMap(([a, b]) => visibleParts(hidden, a, b)).map((part) => line3(part, "axon-door-edge"));
+    if (!parts.length) return "";
+    const divider = visibleParts(hidden, ...middle).map((part) => line3(part, "door-divider"));
+    return `<g class="door axon-door" data-door="${door.id}" style="--door:${spec.doors.emergencyColor}">${parts.join("")}${divider.join("")}</g>`;
+  });
+  const marks = anchors.filter(({ at }) => !hidden(at)).map(({ id, at }) => {
+    const [x, y] = K(at);
+    return `<circle class="anchor-point concrete-anchor-node" data-anchor="${esc(id)}" cx="${n(x)}" cy="${n(y)}" r="4" />`;
+  });
   return `
-  <g id="axonometric-view" aria-label="Three-dimensional schematic" transform="translate(0 -390)">
-    ${svgText(735, 445, "3D SKETCH / 3D-SKISSE", "view-title", 'text-anchor="middle"')}
-    <polygon class="axon-wall" points="${baseFarStart.join(",")} ${ridgeStart.join(",")} ${ridgeEnd.join(",")} ${baseFarEnd.join(",")}" />
-    <polygon class="axon-wall" points="${baseNearStart.join(",")} ${ridgeStart.join(",")} ${ridgeEnd.join(",")} ${baseNearEnd.join(",")}" />
-    ${closedFrames}
-    <line class="structure-heavy" x1="${ridgeStart[0]}" y1="${ridgeStart[1]}" x2="${ridgeEnd[0]}" y2="${ridgeEnd[1]}" />
-    <line class="structure-heavy" x1="${baseNearStart[0]}" y1="${baseNearStart[1]}" x2="${baseNearEnd[0]}" y2="${baseNearEnd[1]}" />
-    <line class="structure-heavy" x1="${baseFarStart[0]}" y1="${baseFarStart[1]}" x2="${baseFarEnd[0]}" y2="${baseFarEnd[1]}" />
-    ${extension}
-    <line class="structure-heavy" x1="${ridgeStart[0]}" y1="${ridgeStart[1]}" x2="${ridgeStart[0] - 120}" y2="${ridgeStart[1] + 60}" />
-    <line class="structure-heavy" x1="${baseNearStart[0]}" y1="${baseNearStart[1]}" x2="${baseNearStart[0] - 150}" y2="${baseNearStart[1] + 70}" />
-    <line class="structure-heavy" x1="${baseFarStart[0]}" y1="${baseFarStart[1]}" x2="${baseFarStart[0] - 115}" y2="${baseFarStart[1] + 35}" />
-    ${spec.doors.sideDoor.enabled !== false ? `<g class="door axon-door" style="--door:${green}">
-      <polygon points="746,603 773,590 783,620 756,633" />
-      <line class="door-divider" x1="760" y1="596" x2="769" y2="626" />
-      <polygon class="far-door" points="694,578 716,567 724,592 702,603" />
-    </g>` : ""}
-    ${axonAnchorMarks}
-    <circle class="anchor-point" cx="${ridgeStart[0]}" cy="${ridgeStart[1]}" r="4" />
-    <circle class="anchor-point" cx="${ridgeEnd[0]}" cy="${ridgeEnd[1]}" r="4" />
-    <g class="axis">
-      <circle cx="${baseNearStart[0]}" cy="${baseNearStart[1]}" r="3" />
-      <line class="axis-x" x1="${baseNearStart[0]}" y1="${baseNearStart[1]}" x2="${baseNearEnd[0]}" y2="${baseNearEnd[1]}" marker-end="url(#axis-arrow)" />
-      <line class="axis-y" x1="${baseNearStart[0]}" y1="${baseNearStart[1]}" x2="${baseFarStart[0]}" y2="${baseFarStart[1]}" marker-end="url(#axis-arrow)" />
-      <line class="axis-z" x1="${baseNearStart[0]}" y1="${baseNearStart[1]}" x2="${baseNearStart[0]}" y2="${ridgeEnd[1]}" marker-end="url(#axis-arrow)" />
-      ${svgText(baseNearEnd[0] + 12, baseNearEnd[1] + 4, "X", "axis-letter")}
-      ${svgText(baseFarStart[0] - 12, baseFarStart[1] - 4, "Y", "axis-letter")}
-      ${svgText(baseNearStart[0] - 8, ridgeEnd[1] - 10, "Z", "axis-letter")}
-    </g>
-    ${svgText(735, 748, "X LENGTH/LENGDE · Y WIDTH/BREDDE · Z HEIGHT/HØYDE", "axis-label", 'text-anchor="middle"')}
+  <g id="axonometric-view" aria-label="Three-dimensional sketch">
+    ${svgText(735, 55, "3D SKETCH / 3D-SKISSE", "view-title", 'text-anchor="middle"')}
+    ${faces.map((face) => `<polygon class="axon-wall" points="${face.points.map((p) => K(p).map(n).join(",")).join(" ")}" />`).join("")}
+    ${lines.join("")}
+    ${doors.join("")}
+    ${marks.join("")}
+    ${svgText(735, 358, "X LENGTH/LENGDE · Y WIDTH/BREDDE · Z HEIGHT/HØYDE", "axis-label", 'text-anchor="middle"')}
   </g>`;
 }
 
 function renderSide(spec) {
+  // The left long side (anchors B1…) seen from outside, at one scale: X to the
+  // right from the start gable, Z up. The extension stands past the end gable,
+  // to the right, as on the plan.
+  const shape = aframeShape(spec);
   const hasExtension = spec.structure.extension.enabled;
-  const xStart = hasExtension ? 340 : 130;
-  const xEnd = hasExtension ? 930 : 870;
-  const yTop = 835;
+  const [areaLeft, areaRight] = hasExtension ? [80, 930] : [130, 870];
+  const scale = Math.min((areaRight - areaLeft) / shape.totalLengthMm, 370 / shape.heightMm);
+  const X = (mmX) => n((areaLeft + areaRight) / 2 + (mmX - shape.totalLengthMm / 2) * scale);
+  const xStart = X(0);
+  const xEnd = X(shape.lengthMm);
   const yBase = 1205;
-  const extensionStart = hasExtension ? 80 : xStart;
-  const sideViewCenter = (extensionStart + xEnd) / 2;
-  const heightDimensionX = Math.min(950, xEnd + 50);
+  const yTop = n(yBase - shape.heightMm * scale);
+  const extensionEnd = X(shape.totalLengthMm);
+  const sideViewCenter = (xStart + extensionEnd) / 2;
+  const heightDimensionX = Math.min(950, extensionEnd + 50);
   const heightAxisLabelX = heightDimensionX + 22;
   const stationX = spec.stationRatios.map((ratio) => xStart + ratio * (xEnd - xStart));
   const levels = Array.from({ length: 6 }, (_, index) => yTop + index * (yBase - yTop) / 5);
@@ -594,47 +523,34 @@ function renderSide(spec) {
   const internalDoorX = internalDoorPair?.enabled
     ? xStart + internalDoorPair.stationRatio * (xEnd - xStart)
     : 0;
-  const extensionFrames = spec.structure.extension.enabled ? spec.structure.extension.frames : 0;
+  const extensionFrames = shape.extension.length;
   const extensionFoundation = spec.foundation.extension;
-  const extensionMeasuredSpanMm = extensionFrames
-    ? extensionFoundation.passageLengthMm + extensionFoundation.anchorSpanMm
-    : 0;
-  const passageRatio = extensionFrames
-    ? extensionFoundation.passageLengthMm / extensionMeasuredSpanMm
-    : 0;
-  const innerAnchorX = extensionFrames ? xStart - passageRatio * (xStart - extensionStart) : xStart;
-  const extensionXs = extensionFrames
-    ? [
-        ...Array.from({ length: extensionFrames }, (_, index) => (
-          extensionStart + index * (innerAnchorX - extensionStart) / (extensionFrames - 1)
-        )),
-        xStart
-      ]
-    : [xStart];
+  const innerAnchorX = extensionFrames ? X(shape.extension[0].x) : xEnd;
+  const extensionXs = shape.extension.map(({ x }) => X(x));
 
   const stationGrid = stationX.map((sx, index) => `
     <line class="station-line" x1="${n(sx)}" y1="${yTop}" x2="${n(sx)}" y2="${yBase}" />
     ${svgText(sx, yTop - 10, index + 1, "station-label", 'text-anchor="middle"')}`).join("");
   const clearHeadY = yTop + (spec.structure.extension.passageHeadRatio ?? 0.69) * (yBase - yTop);
   const extensionGrid = extensionFrames ? extensionXs.map((sx, index) => {
-    const isClearInterfacePost = spec.structure.extension.clearInterfacePassage && index === extensionFrames - 1;
+    const isClearInterfacePost = spec.structure.extension.clearInterfacePassage && index === 0;
     return `
       <line class="station-line ${isClearInterfacePost ? "clear-interface passage-boundary" : ""}" x1="${n(sx)}" y1="${yTop}" x2="${n(sx)}" y2="${yBase}" />
-      ${svgText(sx, yTop - 10, index === extensionFrames ? "1" : `E${extensionFrames - index}`, "station-label", 'text-anchor="middle"')}`;
+      ${svgText(sx, yTop - 10, `E${index + 1}`, "station-label", 'text-anchor="middle"')}`;
   }).join("") : "";
   const passageHeader = spec.structure.extension.clearInterfacePassage
-    ? `<line class="structure-heavy passage-header" x1="${n(extensionXs.at(-2))}" y1="${n(clearHeadY)}" x2="${xStart}" y2="${n(clearHeadY)}" />`
+    ? `<line class="structure-heavy passage-header" x1="${xEnd}" y1="${n(clearHeadY)}" x2="${n(innerAnchorX)}" y2="${n(clearHeadY)}" />`
     : "";
-  const passageLabelX = extensionFrames ? extensionXs.at(-2) - 45 : xStart;
+  const passageLabelX = (xEnd + innerAnchorX) / 2;
   const levelGrid = levels.map((level, index) => {
     const isBoundary = index === 0 || index === levels.length - 1;
     const className = isBoundary ? "structure-heavy" : "station-line";
     if (index === levels.length - 1 && spec.structure.extension.clearInterfacePassage) {
       return `
-        <line class="${className} passage-ground-extension" x1="${extensionStart}" y1="${n(level)}" x2="${n(innerAnchorX)}" y2="${n(level)}" />
-        <line class="${className} passage-ground-shell" x1="${xStart}" y1="${n(level)}" x2="${xEnd}" y2="${n(level)}" />`;
+        <line class="${className} passage-ground-shell" x1="${xStart}" y1="${n(level)}" x2="${xEnd}" y2="${n(level)}" />
+        <line class="${className} passage-ground-extension" x1="${n(innerAnchorX)}" y1="${n(level)}" x2="${extensionEnd}" y2="${n(level)}" />`;
     }
-    return `<line class="${className}" x1="${extensionStart}" y1="${n(level)}" x2="${xEnd}" y2="${n(level)}" />`;
+    return `<line class="${className}" x1="${xStart}" y1="${n(level)}" x2="${extensionEnd}" y2="${n(level)}" />`;
   }).join("");
 
   const anchorMarks = anchorRatios.map((ratio, anchorIndex) => {
@@ -679,7 +595,7 @@ function renderSide(spec) {
 
   return `
   <g id="side-view" aria-label="Long side elevation">
-    ${svgText(sideViewCenter, 802, "SIDE VIEW / LANGFASADE", "view-title", 'text-anchor="middle"')}
+    ${svgText(sideViewCenter, yTop - 33, "SIDE VIEW / LANGFASADE", "view-title", 'text-anchor="middle"')}
     <rect class="wall-fill" x="${xStart}" y="${yTop}" width="${xEnd - xStart}" height="${yBase - yTop}" />
     <rect class="concrete-rail concrete-rail-side" x="${xStart}" y="${yBase}" width="${xEnd - xStart}" height="10" />
     ${levelGrid}
@@ -711,22 +627,22 @@ function renderSide(spec) {
       ${endDoorCenters.length ? `<rect x="${xEnd}" y="${yBase - 70}" width="32" height="70" />
       <line x1="${xEnd + 32}" y1="${yBase - 35}" x2="${xEnd + 54}" y2="${yBase - 35}" marker-end="url(#door-arrow)" />` : ""}
     </g>
-    ${extensionFrames ? `<rect class="concrete-rail extension-connector-side" x="${extensionStart}" y="${yBase}" width="${n(innerAnchorX - extensionStart)}" height="10" />` : ""}
+    ${extensionFrames ? `<rect class="concrete-rail extension-connector-side" x="${n(innerAnchorX)}" y="${yBase}" width="${n(extensionEnd - innerAnchorX)}" height="10" />` : ""}
     ${anchorMarks}
     ${extensionFrames ? `
-      <rect class="concrete extension-anchor-pad extension-anchor-pad-side" data-anchor="${spec.anchors.extensionLeftLabel}-OUTER" data-depth-mm="${spec.foundation.concreteAnchor.depthMm}" x="${extensionStart - 18}" y="${yBase}" width="36" height="34" />
       <rect class="concrete extension-anchor-pad extension-anchor-pad-side" data-anchor="${spec.anchors.extensionLeftLabel}-INNER" data-depth-mm="${spec.foundation.concreteAnchor.depthMm}" x="${n(innerAnchorX - 18)}" y="${yBase}" width="36" height="34" />
-      <circle class="anchor-point" cx="${extensionStart}" cy="${yBase}" r="5" />
+      <rect class="concrete extension-anchor-pad extension-anchor-pad-side" data-anchor="${spec.anchors.extensionLeftLabel}-OUTER" data-depth-mm="${spec.foundation.concreteAnchor.depthMm}" x="${n(extensionEnd - 18)}" y="${yBase}" width="36" height="34" />
       <circle class="anchor-point" cx="${n(innerAnchorX)}" cy="${yBase}" r="5" />
-      ${svgText((extensionStart + xStart) / 2, yBase + 24, spec.anchors.extensionLeftLabel, "anchor-label", 'text-anchor="middle"')}
+      <circle class="anchor-point" cx="${extensionEnd}" cy="${yBase}" r="5" />
+      ${svgText((innerAnchorX + extensionEnd) / 2, yBase + 24, spec.anchors.extensionLeftLabel, "anchor-label", 'text-anchor="middle"')}
     ` : ""}
     ${dimensionHorizontal(xStart, xEnd, yBase + 62, `${mm(spec.dimensions.closedLengthMm)} mm · ${spec.structure.bays} BAYS`)}
-    ${extensionFrames ? dimensionHorizontal(extensionStart, innerAnchorX, yBase + 62, `${mm(extensionFoundation.anchorSpanMm)} mm`) : ""}
-    ${extensionFrames ? dimensionHorizontal(innerAnchorX, xStart, yBase + 62, `${mm(extensionFoundation.passageLengthMm)} mm PASSAGE`) : ""}
-    ${extensionFrames ? dimensionHorizontal(extensionStart, xEnd, yBase + 92, `TOTAL ≈${mm(spec.dimensions.closedLengthMm + spec.dimensions.extensionLengthMm)} mm`) : ""}
+    ${extensionFrames ? dimensionHorizontal(xEnd, innerAnchorX, yBase + 62, `${mm(extensionFoundation.passageLengthMm)} mm PASSAGE`) : ""}
+    ${extensionFrames ? dimensionHorizontal(innerAnchorX, extensionEnd, yBase + 62, `${mm(extensionFoundation.anchorSpanMm)} mm`) : ""}
+    ${extensionFrames ? dimensionHorizontal(xStart, extensionEnd, yBase + 92, `TOTAL ≈${mm(spec.dimensions.closedLengthMm + spec.dimensions.extensionLengthMm)} mm`) : ""}
     ${dimensionVertical(heightDimensionX, yTop, yBase, `${mm(spec.dimensions.heightMm)} mm`, -1)}
     ${svgText(sideViewCenter, 1330, "X · LENGTH / LENGDE", "axis-label", 'text-anchor="middle"')}
-    ${svgText(heightAxisLabelX, 1020, "Z · HEIGHT / HØYDE", "axis-label", `transform="rotate(-90 ${heightAxisLabelX} 1020)" text-anchor="middle"`)}
+    ${svgText(heightAxisLabelX, n((yTop + yBase) / 2), "Z · HEIGHT / HØYDE", "axis-label", `transform="rotate(-90 ${heightAxisLabelX} ${n((yTop + yBase) / 2)})" text-anchor="middle"`)}
   </g>`;
 }
 
@@ -750,6 +666,12 @@ function renderTitleBlock(spec) {
 }
 
 export function renderAFrameSheet(input) {
+  // Views placed by millimetres leave float noise in sums (127.96000000000001);
+  // every number on the sheet is kept to two decimals.
+  return renderSheet(input).replace(/(\d+\.\d{3,})/g, (value) => String(Number(Number(value).toFixed(2))));
+}
+
+function renderSheet(input) {
   const spec = normalizeSpec(input);
   const title = `Plan ${spec.name}`;
 

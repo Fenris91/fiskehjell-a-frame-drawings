@@ -1,137 +1,6 @@
-import { extrude, obliqueView, profiles, projectSolid, stationRun } from "../geometry.mjs";
-
-// The Hall as a solid: four extension frames over the outer anchor span, an open
-// passage, then thirteen frames over the closed length. Station places are the
-// real distances, so the sketch is in proportion.
+// The Hall: thirteen frames over the closed length, then an open passage and
+// four extension frames over the outer anchor span, past the end gable.
 const HALL = { widthMm: 12000, heightMm: 10500, closedMm: 27000, passageMm: 4000, extensionSpanMm: 6000 };
-const hallSketchLengthMm = HALL.extensionSpanMm + HALL.passageMm + HALL.closedMm;
-const hallClosedStart = (HALL.extensionSpanMm + HALL.passageMm) / hallSketchLengthMm;
-const hallClosedShare = HALL.closedMm / hallSketchLengthMm;
-const hallProfile = profiles.aframe({ widthMm: HALL.widthMm, heightMm: HALL.heightMm });
-// E4 is the outer end of the extension and E1 the frame nearest the passage.
-const hallExtensionRun = stationRun("E", 4, 0, HALL.extensionSpanMm / hallSketchLengthMm)
-  .map((station, index) => ({ ...station, id: `E${4 - index}` }));
-const hallSolid = extrude(
-  hallProfile,
-  [hallExtensionRun, stationRun("F", 13, hallClosedStart, 1)],
-  { lengthMm: hallSketchLengthMm }
-);
-const hallView = obliqueView({ origin: [560, 690], along: [280, -125], across: [45, 35], up: [7.5, -112.5] });
-const { nodes: hallNodes, edges: hallEdges } = projectSolid(hallSolid, hallView);
-const hallLongitudinalOffset = hallView.along;
-
-// A point of the section at a ratio along the sketch; `point` is A, B or C.
-function hallPoint(point, ratio) {
-  return hallView.at(hallProfile, ratio, hallProfile.vertices[point]);
-}
-
-// The ridge and far base rail bridge the interface; the near base rail stays open for passage.
-hallEdges.push(["E1A", "F1A", "rail"], ["E1C", "F1C", "rail"]);
-
-const shiftPoints = (points, ratio) => points.map(([x, y]) => [
-  x + hallLongitudinalOffset[0] * ratio,
-  y + hallLongitudinalOffset[1] * ratio
-]);
-const dividerFor = (points) => [
-  [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2],
-  [(points[3][0] + points[2][0]) / 2, (points[3][1] + points[2][1]) / 2]
-];
-const endDoorLeft = [[571.5, 663.5], [563.6, 692.8], [575.8, 702.3], [580, 670.1]];
-const endDoorRight = [[589.5, 677.4], [589.3, 712.8], [601.4, 722.2], [598, 684]];
-const farDoorLeft = shiftPoints(endDoorLeft, 1);
-const farDoorRight = shiftPoints(endDoorRight, 1);
-
-function wallDoor(basePoint, ratio, far = false) {
-  const half = 0.035;
-  const heightRatio = 0.36;
-  const lowerStart = hallPoint(basePoint, ratio - half);
-  const lowerEnd = hallPoint(basePoint, ratio + half);
-  const apexStart = hallPoint("C", ratio - half);
-  const apexEnd = hallPoint("C", ratio + half);
-  const upperStart = [
-    lowerStart[0] + (apexStart[0] - lowerStart[0]) * heightRatio,
-    lowerStart[1] + (apexStart[1] - lowerStart[1]) * heightRatio
-  ];
-  const upperEnd = [
-    lowerEnd[0] + (apexEnd[0] - lowerEnd[0]) * heightRatio,
-    lowerEnd[1] + (apexEnd[1] - lowerEnd[1]) * heightRatio
-  ];
-  const lowerMiddle = hallPoint(basePoint, ratio);
-  const apexMiddle = hallPoint("C", ratio);
-  const upperMiddle = [
-    lowerMiddle[0] + (apexMiddle[0] - lowerMiddle[0]) * heightRatio,
-    lowerMiddle[1] + (apexMiddle[1] - lowerMiddle[1]) * heightRatio
-  ];
-  return {
-    points: [lowerStart, lowerEnd, upperEnd, upperStart],
-    divider: [lowerMiddle, upperMiddle],
-    far
-  };
-}
-
-const hallMiddleRatio = hallClosedStart + 0.54 * hallClosedShare;
-const hallEndDoors = [
-  { points: endDoorLeft, divider: dividerFor(endDoorLeft) },
-  { points: endDoorRight, divider: dividerFor(endDoorRight) },
-  { points: farDoorLeft, divider: dividerFor(farDoorLeft), far: true },
-  { points: farDoorRight, divider: dividerFor(farDoorRight), far: true }
-];
-const hallSideDoors = [
-  wallDoor("B", hallMiddleRatio, false),
-  wallDoor("A", hallMiddleRatio, true)
-];
-const doorCenter = (door) => [
-  door.points.reduce((sum, point) => sum + point[0], 0) / door.points.length,
-  door.points.reduce((sum, point) => sum + point[1], 0) / door.points.length
-];
-const hallDoorArrows = [
-  ...hallEndDoors.slice(0, 2).map((door, index) => {
-    const [x, y] = doorCenter(door);
-    return { id: `end-start-${index + 1}`, from: [x, y], to: [x - 13, y + 7] };
-  }),
-  ...hallEndDoors.slice(2).map((door, index) => {
-    const [x, y] = doorCenter(door);
-    return { id: `end-far-${index + 1}`, from: [x, y], to: [x + 13, y - 7], far: true };
-  }),
-  ...hallSideDoors.map((door, index) => {
-    const [x, y] = doorCenter(door);
-    return index === 0
-      ? { id: "middle-near", from: [x, y], to: [x + 12, y + 10] }
-      : { id: "middle-far", from: [x, y], to: [x - 12, y - 10], far: true };
-  })
-];
-
-const hallGraph = {
-  viewTransform: "translate(0 0)",
-  nodes: hallNodes,
-  edges: hallEdges,
-  nodeLabels: { E4A: "A", E4B: "B", E4C: "C" },
-  nodeLabelOffsets: { E4A: [-12, -9], E4B: [12, 14], E4C: [-12, -8] },
-  anchorNodes: [
-    "E4A", "E4B", "E1A", "E1B",
-    "F1A", "F1B", "F5A", "F5B", "F9A", "F9B", "F13A", "F13B"
-  ],
-  anchorLabels: {
-    E4A: "L1-OUTER", E4B: "L2-OUTER", E1A: "L1-INNER", E1B: "L2-INNER",
-    F1A: "B1", F5A: "B2", F9A: "B3", F13A: "B4",
-    F1B: "B5", F5B: "B6", F9B: "B7", F13B: "B8"
-  },
-  endDoorPolygons: hallEndDoors,
-  sideDoorPolygons: hallSideDoors,
-  doorArrows: hallDoorArrows,
-  clearPassage: { between: ["E1B", "F1B"], openAtBase: true },
-  axisExtents: {
-    origin: [458, 735],
-    x: hallNodes.E4A,
-    y: [915, 735],
-    z: [458, hallNodes.F13C[1]]
-  },
-  axisLabelPositions: { x: [520, 708], y: [925, 739], z: [448, hallNodes.F13C[1] - 8] },
-  axisGuides: [
-    [[458, hallNodes.F13C[1]], hallNodes.F13C],
-    [hallNodes.F13B, [hallNodes.F13B[0], 735]]
-  ]
-};
 
 export const hall = {
   id: "hall",
@@ -194,7 +63,7 @@ export const hall = {
   doors: {
     emergencyColor: "#00a84f",
     endGablePairs: 2,
-    endGableCenters: [0.2, 0.8],
+    endGableCenters: [0.28, 0.72],
     endDoorWidthRatio: 0.19,
     sideDoor: {
       enabled: true,
@@ -248,7 +117,6 @@ export const hall = {
     ]
   },
 
-  shellGraph: hallGraph,
 
   notes: [
     "DIMENSIONS PROVISIONAL / MÅL FORELØPIGE",

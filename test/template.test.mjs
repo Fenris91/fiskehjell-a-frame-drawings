@@ -4,7 +4,7 @@ import { hall } from "../src/specs/hall.mjs";
 import { shell6 } from "../src/specs/shell6.mjs";
 import { shell6d } from "../src/specs/shell6d.mjs";
 import { shell8 } from "../src/specs/shell8.mjs";
-import { normalizeSpec, renderAFrameSheet } from "../src/render-sheet.mjs";
+import { aframeShape, normalizeSpec, renderAFrameSheet } from "../src/render-sheet.mjs";
 import { foundationSchedule } from "../src/foundation-schedule.mjs";
 import { renderCheckpointSheet } from "../src/render-checkpoint.mjs";
 
@@ -79,8 +79,10 @@ test("keeps views, axes, dimensions, and anchor labels on every building sheet",
 test("centres plan anchor pads and standardizes two-leaf outward emergency doors", () => {
   const html = renderAFrameSheet(hall);
   assert.equal((html.match(/class="concrete plan-anchor-pad"/g) ?? []).length, 8);
-  assert.match(html, /class="concrete plan-anchor-pad"[^>]*x="111"/);
-  assert.match(html, /class="concrete plan-anchor-pad"[^>]*x="346"/);
+  // The pads are centred on the plan's long walls.
+  const [, wallX, wallWidth] = html.match(/<rect class="wall-fill" x="([^"]+)" y="95" width="([^"]+)"/).map(Number);
+  assert.match(html, new RegExp(`class="concrete plan-anchor-pad" data-anchor="B1"[^>]*x="${Number((wallX - 14).toFixed(2))}"`));
+  assert.match(html, new RegExp(`class="concrete plan-anchor-pad" data-anchor="B5"[^>]*x="${Number((wallX + wallWidth - 14).toFixed(2))}"`));
   assert.equal((html.match(/class="concrete extension-anchor-pad"/g) ?? []).length, 4);
   assert.equal((html.match(/class="concrete extension-anchor-pad extension-anchor-pad-side"/g) ?? []).length, 2);
   assert.equal((html.match(/class="concrete-rail extension-connector-plan"/g) ?? []).length, 2);
@@ -100,20 +102,18 @@ test("centres plan anchor pads and standardizes two-leaf outward emergency doors
   assert.ok((html.match(/class="door double-leaf-door"/g) ?? []).length >= 4);
   assert.ok((html.match(/class="door-swing-direction"/g) ?? []).length >= 7);
   for (const paired of [hall, shell6, shell8]) {
-    assert.deepEqual(paired.doors.endGableCenters, [0.2, 0.8]);
+    assert.deepEqual(paired.doors.endGableCenters, [0.28, 0.72]);
   }
   assert.deepEqual(shell6d.doors.endGableCenters, [0.5]);
   assert.equal(shell6d.doors.internalDoorPair.leafCount, 2);
-  for (const [building, arrowCount] of [[hall, 6], [shell6, 2], [shell6d, 3], [shell8, 2]]) {
-    const buildingHtml = renderAFrameSheet(building);
-    assert.equal((buildingHtml.match(/class="graph-door-direction/g) ?? []).length, arrowCount);
+  // The 3D sketch shows the doors that face its viewer, the start gable's and
+  // the left long side's; the right side's, the far gable's and the internal
+  // doors are behind the shell.
+  for (const [building, seen] of [[hall, ["side-left", "start-1", "start-2"]], [shell6, ["start-1", "start-2"]], [shell6d, []], [shell8, ["start-1", "start-2"]]]) {
+    const sketch = renderAFrameSheet(building).split('id="axonometric-view"')[1].split("</g>\n  <g id=")[0];
+    const shown = [...sketch.matchAll(/data-door="([^"]+)"/g)].map(([, id]) => id).sort();
+    assert.deepEqual(shown, seen, building.id);
   }
-  assert.equal((html.match(/class="graph-end-door(?: |")/g) ?? []).length, 4);
-  assert.equal((html.match(/class="graph-side-door(?: |")/g) ?? []).length, 2);
-  assert.equal((html.match(/data-(?:end|side)-door-set=/g) ?? []).length, 6);
-  assert.equal((html.match(/class="graph-door-divider/g) ?? []).length, 6);
-  assert.equal((html.match(/class="graph-door-direction/g) ?? []).length, 6);
-  assert.equal((html.match(/class="graph-door-swing(?: |")/g) ?? []).length, 0);
 });
 
 test("stores anchor coordinates and shows one foundation dimension example", () => {
@@ -213,7 +213,7 @@ test("shares configurable top-down construction layers across all building specs
     const endDoorCount = (spec.doors.endGableEndCenters ?? spec.doors.endGableCenters ?? []).length;
     const sideDoorCount = spec.doors.sideDoor?.enabled !== false ? 2 : 0;
     const internalDoorCount = spec.doors.internalDoorPair?.enabled
-      ? (spec.doors.internalDoorPair.centerRatios ?? [0.2, 0.8]).length
+      ? (spec.doors.internalDoorPair.centerRatios ?? [0.28, 0.72]).length
       : 0;
     assert.equal(
       (html.match(/data-layer-door-set=/g) ?? []).length,
@@ -221,36 +221,6 @@ test("shares configurable top-down construction layers across all building specs
       `${building.name} must show all emergency-door sets in state 3 only`
     );
   }
-});
-
-test("owns 3D structure through named nodes and edges", () => {
-  const spec = normalizeSpec(hall);
-  const nodes = spec.shellGraph.nodes;
-  for (const [from, to] of spec.shellGraph.edges) {
-    assert.ok(nodes[from], `missing graph node ${from}`);
-    assert.ok(nodes[to], `missing graph node ${to}`);
-  }
-  assert.deepEqual(spec.shellGraph.clearPassage.between, ["E1B", "F1B"]);
-  assert.equal(spec.shellGraph.clearPassage.openAtBase, true);
-
-  const html = renderAFrameSheet(hall);
-  assert.equal(Object.keys(spec.shellGraph.nodes).length, 51);
-  assert.match(html, /data-node="E4A"/);
-  assert.match(html, /data-node="F13C"/);
-  assert.match(html, /data-from="E1A" data-to="F1A"/);
-  assert.match(html, /data-from="E1C" data-to="F1C"/);
-  assert.doesNotMatch(html, /data-from="E1B" data-to="F1B"/);
-});
-
-test("keeps 3D axes tied to explicit outer extents", () => {
-  const spec = normalizeSpec(hall);
-  assert.deepEqual(spec.shellGraph.axisExtents.x, spec.shellGraph.nodes.E4A);
-  assert.equal(spec.shellGraph.axisExtents.z[1], spec.shellGraph.nodes.F13C[1]);
-
-  const html = renderAFrameSheet(hall);
-  assert.match(html, /x1="458" y1="735" x2="560" y2="690"/);
-  assert.match(html, /x1="458" y1="735" x2="915" y2="735"/);
-  assert.match(html, /x1="458" y1="735" x2="458" y2="470"/);
 });
 
 test("describes all six Hall emergency-door sets on the checkpoint page", () => {
@@ -268,7 +238,7 @@ test("renders Shell 6 as a six-frame four-corner shell without extension geometr
   assert.deepEqual(spec.anchors.closedStationRatios, [0, 1]);
   assert.equal(spec.anchors.closedLabelsLeft.length + spec.anchors.closedLabelsRight.length, 4);
   assert.equal(spec.doors.sideDoor.enabled, false);
-  assert.deepEqual(spec.doors.endGableCenters, [0.2, 0.8]);
+  assert.deepEqual(spec.doors.endGableCenters, [0.28, 0.72]);
   assert.equal(spec.bracing.elements.length, 4);
   assert.ok(spec.bracing.elements.every((element) => element.from[0] === 0 && element.to[0] === 1));
   assert.equal(spec.dimensions.closedLengthMm, 13500);
@@ -281,31 +251,23 @@ test("renders Shell 6 as a six-frame four-corner shell without extension geometr
   assert.doesNotMatch(html, /CLEAR PASSAGE/);
   assert.doesNotMatch(html, /TOTAL ≈/);
   assert.doesNotMatch(html, /class="side-door"/);
-  assert.doesNotMatch(html, /class="door axon-door"/);
+  assert.doesNotMatch(html, /data-door="side-/);
   assert.doesNotMatch(html, /class="door side-elevation-door"/);
   assert.equal((html.match(/data-wire="near-/g) ?? []).length, 2);
   assert.equal((html.match(/data-wire="far-/g) ?? []).length, 2);
-  assert.match(html, /data-wire="near-down" x1="130" y1="835" x2="870" y2="1205"/);
-  assert.match(html, /data-wire="near-up" x1="130" y1="1205" x2="870" y2="835"/);
-  assert.equal(Object.keys(spec.shellGraph.nodes).length, 18);
-  assert.equal(spec.shellGraph.edges.filter((edge) => edge[2] === "frame").length, 18);
-  assert.equal(spec.shellGraph.edges.filter((edge) => edge[2] === "rail").length, 15);
-  assert.deepEqual(spec.shellGraph.nodeLabels, { F1A: "A", F1B: "B", F1C: "C" });
-  assert.equal(spec.shellGraph.anchorNodes.length, 4);
-  assert.notDeepEqual(spec.shellGraph.axisExtents.origin, spec.shellGraph.nodes.F1A);
-  assert.equal((html.match(/concrete-anchor-node/g) ?? []).length, 4);
-  assert.equal((html.match(/class="graph-end-door"/g) ?? []).length, 4);
-  assert.equal((html.match(/class="axis-guide"/g) ?? []).length, 2);
-  assert.match(html, /class="graph-node-label"[^>]*>A<\/text>/);
-  assert.match(html, /class="graph-node-label"[^>]*>B<\/text>/);
-  assert.match(html, /class="graph-node-label"[^>]*>C<\/text>/);
+  // The near wires run corner to corner of the side view's wall.
+  const [, sx, sy, sw, sh] = html.split('id="side-view"')[1].match(/<rect class="wall-fill" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/).map(Number);
+  const near = (id) => html.match(new RegExp(`data-wire="${id}" x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)"`)).slice(1).map(Number);
+  assert.deepEqual(near("near-down"), [sx, sy, Number((sx + sw).toFixed(2)), sy + sh]);
+  assert.deepEqual(near("near-up"), [sx, sy + sh, Number((sx + sw).toFixed(2)), sy]);
+  // In 3D: six frames, and the anchors not hidden behind the shell.
+  const sketch = html.split('id="axonometric-view"')[1];
+  assert.deepEqual([...new Set([...sketch.matchAll(/data-frame="([^"]+)"/g)].map(([, id]) => id))], ["1", "2", "3", "4", "5", "6"]);
+  assert.match(sketch, /data-anchor="B1"/);
+  assert.match(sketch, /data-anchor="B2"/);
   assert.match(html, /B1/);
   assert.match(html, /B4/);
-  assert.match(html, /id="axonometric-view"[^>]*translate\(0 -390\)/);
   assert.match(html, /id="gable-view"[^>]*translate\(0 350\)/);
-  assert.match(html, /x1="458" y1="735" x2="560" y2="690"/);
-  assert.match(html, /x1="458" y1="735" x2="855" y2="735"/);
-  assert.match(html, /x1="458" y1="735" x2="458" y2="485"/);
 });
 
 test("renders custom building identity without changing renderer code", () => {
@@ -335,15 +297,14 @@ test("renders Shell 6D with two opposed internal doors and one gable-end exit", 
   assert.match(html, /PLAN SHELL 6D/);
   assert.equal((html.match(/class="side-door"/g) ?? []).length, 0);
   assert.equal((html.match(/class="internal-door-pair"/g) ?? []).length, 1);
-  assert.equal((html.match(/class="graph-side-door(?: |")/g) ?? []).length, 0);
-  assert.equal((html.match(/class="graph-internal-door"/g) ?? []).length, 2);
-  assert.equal((html.match(/class="graph-end-door"/g) ?? []).length, 2);
   assert.equal((html.match(/class="door gable-door"/g) ?? []).length, 1);
   assert.equal((html.match(/class="door internal-gable-door far-door"/g) ?? []).length, 2);
   assert.equal((html.match(/class="door side-elevation-door"/g) ?? []).length, 0);
   assert.equal((html.match(/class="internal-section-door far-door"/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /x="308" y="1135" width="32" height="70"/);
-  assert.match(html, /x="870" y="1135" width="32" height="70"/);
+  // Only the end gable has a door: its marker stands at the end of the side view.
+  const [, sx, , sw] = html.split('id="side-view"')[1].match(/<rect class="wall-fill" x="([^"]+)" y="([^"]+)" width="([^"]+)"/).map(Number);
+  const markers = [...html.split('class="edge-door-indicators"')[1].split("</g>")[0].matchAll(/<rect x="([^"]+)"/g)].map(([, x]) => Number(x));
+  assert.deepEqual(markers, [Number((sx + sw).toFixed(2))]);
 });
 
 test("renders Shell 8 with eight frames, six anchors, four corner doors, and one full cross per long wall", () => {
@@ -354,7 +315,7 @@ test("renders Shell 8 with eight frames, six anchors, four corner doors, and one
   assert.equal(spec.stationRatios.length, 8);
   assert.deepEqual(spec.anchors.closedStationRatios, [0, middle, 1]);
   assert.equal(spec.anchors.closedLabelsLeft.length + spec.anchors.closedLabelsRight.length, 6);
-  assert.deepEqual(spec.doors.endGableCenters, [0.2, 0.8]);
+  assert.deepEqual(spec.doors.endGableCenters, [0.28, 0.72]);
   assert.equal(spec.doors.sideDoor.enabled, false);
   assert.equal(spec.bracing.elements.length, 4);
   assert.equal(spec.dimensions.closedLengthMm, 18900);
@@ -364,14 +325,80 @@ test("renders Shell 8 with eight frames, six anchors, four corner doors, and one
   assert.match(html, /18 900 mm · 7 BAYS/);
   assert.equal((html.match(/data-wire="near-/g) ?? []).length, 2);
   assert.equal((html.match(/data-wire="far-/g) ?? []).length, 2);
-  assert.equal(Object.keys(spec.shellGraph.nodes).length, 24);
-  assert.equal(spec.shellGraph.edges.filter((edge) => edge[2] === "frame").length, 24);
-  assert.equal(spec.shellGraph.edges.filter((edge) => edge[2] === "rail").length, 21);
-  assert.equal(spec.shellGraph.anchorNodes.length, 6);
-  assert.equal((html.match(/concrete-anchor-node/g) ?? []).length, 6);
-  assert.equal((html.match(/class="graph-end-door"/g) ?? []).length, 4);
+  const sketch = html.split('id="axonometric-view"')[1];
+  assert.equal(new Set([...sketch.matchAll(/data-frame="([^"]+)"/g)].map(([, id]) => id)).size, 8);
+  // The left anchors, middle one included, are on the side facing the viewer.
+  for (const id of spec.anchors.closedLabelsLeft) assert.match(sketch, new RegExp(`data-anchor="${id}"`));
   assert.equal((html.match(/class="door gable-door"/g) ?? []).length, 2);
   assert.equal((html.match(/class="side-door"/g) ?? []).length, 0);
-  assert.match(html, /x1="125" y1="650" x2="360" y2="650"/);
-  assert.doesNotMatch(html, /x1="125" y1="60" x2="360" y2="60"/);
+  // The width dimension sits under the plan, at the plan's own width.
+  const [, wallX, wallY, wallWidth, wallLength] = html.match(/<rect class="wall-fill" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/).map(Number);
+  assert.match(html, new RegExp(`x1="${wallX}" y1="${Number((wallY + wallLength + 55).toFixed(2))}" x2="${Number((wallX + wallWidth).toFixed(2))}"`));
+});
+
+test("every A-frame view is to scale and puts every frame and anchor where the others do", () => {
+  const close = (a, b, what) => assert.ok(Math.abs(a - b) <= 0.01 * Math.abs(b), `${what}: ${a} against ${b}`);
+  for (const building of [hall, shell6, shell6d, shell8]) {
+    const html = renderAFrameSheet(building);
+    const shape = aframeShape(building);
+    const { lengthMm: L, widthMm: W, heightMm: H } = shape;
+    const view = (id) => html.split(`id="${id}"`)[1].split('\n  <g id="')[0];
+    const rect = (id) => view(id).match(/<rect class="wall-fill" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/).slice(1).map(Number);
+
+    // To scale: plan, side view and the A-frame end view keep the true proportions.
+    const [, , planWidth, planLength] = rect("top-down-view");
+    close(planWidth / planLength, W / L, `${building.id} plan`);
+    const [sideX, , sideLength, sideHeight] = rect("side-view");
+    close(sideLength / sideHeight, L / H, `${building.id} side view`);
+    const gable = view("gable-view").match(/class="gable-fill" points="([^"]+)"/)[1].split(" ").map((pair) => pair.split(",").map(Number));
+    const xs = gable.map(([x]) => x), ys = gable.map(([, y]) => y);
+    close((Math.max(...xs) - Math.min(...xs)) / (Math.max(...ys) - Math.min(...ys)), W / H, `${building.id} A-frame view`);
+
+    // The side view: frames 1…N, then the extension E1…, left to right, each at
+    // its distance from the start gable.
+    const labels = [...view("side-view").matchAll(/<text x="([^"]+)" y="[^"]+" class="station-label"[^>]*>([^<]+)<\/text>/g)].map(([, x, label]) => ({ x: Number(x), label }));
+    const frames = [...shape.stations.map((x, index) => ({ id: String(index + 1), x })), ...shape.extension];
+    assert.deepEqual(labels.map(({ label }) => label), frames.map(({ id }) => id), `${building.id} side view order`);
+    for (const [index, frame] of frames.entries()) {
+      assert.ok(Math.abs(labels[index].x - (sideX + frame.x / L * sideLength)) < 0.6, `${building.id} side view ${frame.id} at ${frame.x} mm`);
+    }
+
+    // Plan pads and the foundation schedule: the same anchors at the same places.
+    const planAnchors = [...view("top-down-view").matchAll(/data-anchor="([^"]+)" data-center-x-mm="([^"]+)" data-center-y-mm="([^"]+)"/g)]
+      .map(([, id, x, y]) => `${id}@${x},${y}`).sort();
+    const shapeAnchors = shape.anchors.map(({ id, x, y }) => `${id}@${Math.round(x)},${y}`).sort();
+    assert.deepEqual(planAnchors, shapeAnchors, `${building.id} plan anchors`);
+    assert.deepEqual(foundationSchedule(building).anchors.map(({ id, centerMm }) => `${id}@${centerMm.x},${centerMm.y}`).sort(), shapeAnchors, `${building.id} schedule`);
+
+    // The 3D sketch: every frame, in order along the length (X runs to the right).
+    const sketch = view("axonometric-view");
+    const frameX = (id) => {
+      const lines = [...sketch.matchAll(new RegExp(`data-frame="${id}" x1="([^"]+)" y1="[^"]+" x2="([^"]+)"`, "g"))];
+      assert.ok(lines.length, `${building.id} 3D frame ${id}`);
+      return lines.reduce((sum, [, x1, x2]) => sum + Number(x1) + Number(x2), 0) / (2 * lines.length);
+    };
+    const along = frames.map(({ id }) => frameX(id));
+    assert.ok(along.every((x, index) => index === 0 || x > along[index - 1]), `${building.id} 3D frames in order: ${along.map(Math.round)}`);
+  }
+});
+
+// Emergency doors against TEK17 (FOR-2017-06-19-840) and its guidance: doors at
+// least 2.0 m clear height (§ 12-13 (2) e), escape doors at least 1.16 m wide,
+// the strictest class (risikoklasse 5, § 11-14 VTEK), and every door inside
+// the A at its head with 0.3 m to spare for the leg and the door's side space
+// (§ 12-13 VTEK). Widths here are the openings; the clear width a chosen door
+// gives is checked against the same numbers when it is picked.
+test("every A-frame emergency door fits inside the A and meets the TEK17 minimums", () => {
+  for (const building of [hall, shell6, shell6d, shell8]) {
+    const shape = aframeShape(building);
+    for (const door of shape.doors) {
+      const label = `${building.id} ${door.id}`;
+      assert.ok(door.heightMm >= 2000, `${label} is lower than 2.0 m`);
+      assert.ok(door.widthMm >= 1160, `${label} is narrower than 1.16 m`);
+      if (door.kind === "side") continue;
+      const legInset = (shape.widthMm / 2) * (door.heightMm / shape.heightMm);
+      const edge = Math.min(door.y - door.widthMm / 2, shape.widthMm - door.y - door.widthMm / 2);
+      assert.ok(edge - legInset >= 300, `${label}: its head corner is ${Math.round(edge - legInset)} mm inside the leg`);
+    }
+  }
 });
