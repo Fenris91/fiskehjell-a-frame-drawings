@@ -33,7 +33,7 @@ export const shell8 = {
   doors: {
     ...shell6.doors,
     endGablePairs: 2,
-    endGableCenters: [0.2, 0.8],
+    endGableCenters: [0.28, 0.72],
     sideDoor: {
       ...shell6.doors.sideDoor,
       enabled: false

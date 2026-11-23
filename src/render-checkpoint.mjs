@@ -122,7 +122,7 @@ function layerDoorOverlay(spec, geometry) {
   if (internal?.enabled) {
     const y = footprintY + closedHeight * internal.stationRatio;
     const direction = internal.opensToward === "start" ? -1 : 1;
-    for (const [index, center] of (internal.centerRatios ?? [0.2, 0.8]).entries()) {
+    for (const [index, center] of (internal.centerRatios ?? [0.28, 0.72]).entries()) {
       doorSets.push(endDoor(`internal-${index + 1}`, center, y, direction));
     }
   }

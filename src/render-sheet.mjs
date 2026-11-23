@@ -118,7 +118,7 @@ function dimensionVertical(x, y1, y2, label, labelSide = 1) {
     </g>`;
 }
 
-function outwardEndDoors(x, y, width, direction, color, centerRatios = [0.2, 0.8], leafShare = 0.105) {
+function outwardEndDoors(x, y, width, direction, color, centerRatios = [0.28, 0.72], leafShare = 0.105) {
   const ratios = Array.isArray(centerRatios) ? centerRatios : [0.5];
   return ratios.map((ratio) => {
     const center = x + width * ratio;
@@ -256,7 +256,7 @@ function renderPlan(spec) {
       width,
       internalDoorPair.opensToward === "start" ? -1 : 1,
       green,
-      internalDoorPair.centerRatios ?? [0.2, 0.8],
+      internalDoorPair.centerRatios ?? [0.28, 0.72],
       spec.doors.endDoorWidthRatio / 2
     )}</g>` : ""}
     ${extension}
@@ -399,7 +399,7 @@ export function aframeShape(input) {
     ...(d.endGableStartCenters ?? d.endGableCenters ?? []).map((ratio, index) => ({ id: `start-${index + 1}`, kind: "end", x: 0, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })),
     ...(d.endGableEndCenters ?? d.endGableCenters ?? []).map((ratio, index) => ({ id: `end-${index + 1}`, kind: "end", x: L, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })),
     ...(d.sideDoor.enabled !== false ? ["left", "right"].map((side) => ({ id: `side-${side}`, kind: "side", side, x: d.sideDoor.stationRatio * L, widthMm: d.sideDoor.widthMm, heightMm: d.sideDoor.heightMm })) : []),
-    ...(d.internalDoorPair?.enabled ? (d.internalDoorPair.centerRatios ?? [0.2, 0.8]).map((ratio, index) => ({ id: `internal-${index + 1}`, kind: "internal", x: d.internalDoorPair.stationRatio * L, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })) : [])
+    ...(d.internalDoorPair?.enabled ? (d.internalDoorPair.centerRatios ?? [0.28, 0.72]).map((ratio, index) => ({ id: `internal-${index + 1}`, kind: "internal", x: d.internalDoorPair.stationRatio * L, y: ratio * W, widthMm: doorWidthMm, heightMm: doorHeightMm })) : [])
   ];
   return {
     doors,

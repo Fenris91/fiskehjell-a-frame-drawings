@@ -31,7 +31,7 @@ export const shell6d = {
       enabled: true,
       stationRatio: 0.6,
       leafCount: 2,
-      centerRatios: [0.2, 0.8],
+      centerRatios: [0.28, 0.72],
       opensToward: "end"
     }
   },

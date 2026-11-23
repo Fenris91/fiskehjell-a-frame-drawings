@@ -63,7 +63,7 @@ export const hall = {
   doors: {
     emergencyColor: "#00a84f",
     endGablePairs: 2,
-    endGableCenters: [0.2, 0.8],
+    endGableCenters: [0.28, 0.72],
     endDoorWidthRatio: 0.19,
     sideDoor: {
       enabled: true,

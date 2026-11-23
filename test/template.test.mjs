@@ -102,18 +102,16 @@ test("centres plan anchor pads and standardizes two-leaf outward emergency doors
   assert.ok((html.match(/class="door double-leaf-door"/g) ?? []).length >= 4);
   assert.ok((html.match(/class="door-swing-direction"/g) ?? []).length >= 7);
   for (const paired of [hall, shell6, shell8]) {
-    assert.deepEqual(paired.doors.endGableCenters, [0.2, 0.8]);
+    assert.deepEqual(paired.doors.endGableCenters, [0.28, 0.72]);
   }
   assert.deepEqual(shell6d.doors.endGableCenters, [0.5]);
   assert.equal(shell6d.doors.internalDoorPair.leafCount, 2);
   // The 3D sketch shows the doors that face its viewer, the start gable's and
-  // the left long side's; the right side's and internal doors are behind the
-  // shell. (End-gable and internal doors are left out here: at 0.2 and 0.8 of
-  // the span their outer head corners stand outside the A, and the sketch shows
-  // that, as the end view does.)
+  // the left long side's; the right side's, the far gable's and the internal
+  // doors are behind the shell.
   for (const [building, seen] of [[hall, ["side-left", "start-1", "start-2"]], [shell6, ["start-1", "start-2"]], [shell6d, []], [shell8, ["start-1", "start-2"]]]) {
     const sketch = renderAFrameSheet(building).split('id="axonometric-view"')[1].split("</g>\n  <g id=")[0];
-    const shown = [...sketch.matchAll(/data-door="([^"]+)"/g)].map(([, id]) => id).filter((id) => !/^(end|internal)-/.test(id)).sort();
+    const shown = [...sketch.matchAll(/data-door="([^"]+)"/g)].map(([, id]) => id).sort();
     assert.deepEqual(shown, seen, building.id);
   }
 });
@@ -215,7 +213,7 @@ test("shares configurable top-down construction layers across all building specs
     const endDoorCount = (spec.doors.endGableEndCenters ?? spec.doors.endGableCenters ?? []).length;
     const sideDoorCount = spec.doors.sideDoor?.enabled !== false ? 2 : 0;
     const internalDoorCount = spec.doors.internalDoorPair?.enabled
-      ? (spec.doors.internalDoorPair.centerRatios ?? [0.2, 0.8]).length
+      ? (spec.doors.internalDoorPair.centerRatios ?? [0.28, 0.72]).length
       : 0;
     assert.equal(
       (html.match(/data-layer-door-set=/g) ?? []).length,
@@ -240,7 +238,7 @@ test("renders Shell 6 as a six-frame four-corner shell without extension geometr
   assert.deepEqual(spec.anchors.closedStationRatios, [0, 1]);
   assert.equal(spec.anchors.closedLabelsLeft.length + spec.anchors.closedLabelsRight.length, 4);
   assert.equal(spec.doors.sideDoor.enabled, false);
-  assert.deepEqual(spec.doors.endGableCenters, [0.2, 0.8]);
+  assert.deepEqual(spec.doors.endGableCenters, [0.28, 0.72]);
   assert.equal(spec.bracing.elements.length, 4);
   assert.ok(spec.bracing.elements.every((element) => element.from[0] === 0 && element.to[0] === 1));
   assert.equal(spec.dimensions.closedLengthMm, 13500);
@@ -317,7 +315,7 @@ test("renders Shell 8 with eight frames, six anchors, four corner doors, and one
   assert.equal(spec.stationRatios.length, 8);
   assert.deepEqual(spec.anchors.closedStationRatios, [0, middle, 1]);
   assert.equal(spec.anchors.closedLabelsLeft.length + spec.anchors.closedLabelsRight.length, 6);
-  assert.deepEqual(spec.doors.endGableCenters, [0.2, 0.8]);
+  assert.deepEqual(spec.doors.endGableCenters, [0.28, 0.72]);
   assert.equal(spec.doors.sideDoor.enabled, false);
   assert.equal(spec.bracing.elements.length, 4);
   assert.equal(spec.dimensions.closedLengthMm, 18900);
@@ -381,5 +379,26 @@ test("every A-frame view is to scale and puts every frame and anchor where the o
     };
     const along = frames.map(({ id }) => frameX(id));
     assert.ok(along.every((x, index) => index === 0 || x > along[index - 1]), `${building.id} 3D frames in order: ${along.map(Math.round)}`);
+  }
+});
+
+// Emergency doors against TEK17 (FOR-2017-06-19-840) and its guidance: doors at
+// least 2.0 m clear height (§ 12-13 (2) e), escape doors at least 1.16 m wide,
+// the strictest class (risikoklasse 5, § 11-14 VTEK), and every door inside
+// the A at its head with 0.3 m to spare for the leg and the door's side space
+// (§ 12-13 VTEK). Widths here are the openings; the clear width a chosen door
+// gives is checked against the same numbers when it is picked.
+test("every A-frame emergency door fits inside the A and meets the TEK17 minimums", () => {
+  for (const building of [hall, shell6, shell6d, shell8]) {
+    const shape = aframeShape(building);
+    for (const door of shape.doors) {
+      const label = `${building.id} ${door.id}`;
+      assert.ok(door.heightMm >= 2000, `${label} is lower than 2.0 m`);
+      assert.ok(door.widthMm >= 1160, `${label} is narrower than 1.16 m`);
+      if (door.kind === "side") continue;
+      const legInset = (shape.widthMm / 2) * (door.heightMm / shape.heightMm);
+      const edge = Math.min(door.y - door.widthMm / 2, shape.widthMm - door.y - door.widthMm / 2);
+      assert.ok(edge - legInset >= 300, `${label}: its head corner is ${Math.round(edge - legInset)} mm inside the leg`);
+    }
   }
 });
